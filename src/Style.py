@@ -23,3 +23,8 @@ def table_style():
                     font=Cons.Font(),
                     padding=(5,5)
                     )
+    
+def checkbox_style():
+    style = ttk.Style()
+    style.configure("TableBlue.TCheckbutton", background="lightblue", borderwidth=1, relief="solid")
+    style.configure("TableGrey.TCheckbutton", background="lightgrey", borderwidth=1, relief="solid")

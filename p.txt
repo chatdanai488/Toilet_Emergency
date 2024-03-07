@@ -1,0 +1,1 @@
+"TableBlue.TCheckbutton" if row % 2 == 0 else "TableGrey.TCheckbutton"
