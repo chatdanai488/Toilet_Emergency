@@ -1,4 +1,4 @@
-import tkinter as tk
+import customtkinter as tk
 from tkinter import ttk
 from PIL import ImageTk, Image
 
@@ -16,6 +16,8 @@ class EmergencyApp:
         self.screen_width = self.root.winfo_screenwidth()
         self.screen_height = self.root.winfo_screenheight()
         self.root.geometry(f"{self.screen_width}x{self.screen_height-100}-1+0")
+        self.icon_path = "img\logo1.ico"
+        self.root.iconbitmap(self.icon_path)
 
         self.create_widgets()
 
@@ -24,17 +26,29 @@ class EmergencyApp:
         # Create frame for emergency information
         self.emergency_frame = ttk.Frame(self.root)
         self.emergency_frame.grid(
-            row=0, column=0, sticky="nsew", padx=10, pady=10)
+            row=0, column=0, sticky="nsew")
 
         # Create canvas for displaying map
-        self.canvas = tk.Canvas(self.root)
+        self.canvas = tk.CTkCanvas(self.root)
         self.canvas.grid(row=0, column=1, sticky="nsew")
 
+        self.symbol = tk.CTkCanvas(self.emergency_frame, width=300)
+        self.symbol.grid(row=2, column=0, columnspan=2, sticky="nsew")
+        self.input_symbol = Image.open(
+            "img\symbol\warning_sign_gradient_shine.jpg")
+        self.symbol_new_size = (300, 300)
+        self.resized_symbol = self.input_symbol.resize(
+            self.symbol_new_size)
+
+        self.map_symbol = ImageTk.PhotoImage(self.resized_symbol)
+        self.show_alert = self.symbol.create_image(
+            0, 0, anchor=tk.NW, image=self.map_symbol)
         # Load initial map image
         # Provide default map image
-        self.map_image = Image.open("img/F1.jpg")
+        self.map_image = Image.open("img\map\F1.jpg")
         # Resize image
-        self.new_size = (1080, 720)  # Specify the new size (width, height)
+        # Specify the new size (width, height)
+        self.new_size = (self.screen_width, self.screen_height)
         self.resized_image = self.map_image.resize(
             self.new_size)
         self.map_photo = ImageTk.PhotoImage(self.resized_image)
@@ -44,20 +58,20 @@ class EmergencyApp:
         # Emergency alert
         self.alert_label = ttk.Label(
             self.emergency_frame, text="***等待連線***", foreground="blue")
-        self.alert_label.grid(row=0, column=0, padx=10, pady=10)
+        self.alert_label.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
 
         # Pagination combobox
         self.page_label = ttk.Label(self.emergency_frame, text="選擇求助者:")
-        self.page_label.grid(row=1, column=0, padx=10, pady=10)
+        self.page_label.grid(row=1, column=0, padx=10, pady=10, sticky="nsew")
 
-        self.page_combobox = ttk.Combobox(
-            self.emergency_frame, state="readonly", width=5)
-        self.page_combobox.grid(row=1, column=1, padx=5, pady=5)
+        self.page_combobox = tk.CTkComboBox(
+            self.emergency_frame, state="readonly", width=10)
+        self.page_combobox.grid(row=1, column=1)
         self.page_combobox.bind("<<ComboboxSelected>>", self.show_emergency)
 
         # Cancel emergency button
-        self.cancel_button = ttk.Button(
-            self.root, text="關閉緊急求助", style="Danger.TButton", command=self.cancel_emergency)
+        self.cancel_button = tk.CTkButton(
+            self.root, text="關閉緊急求助", fg_color="red", command=self.cancel_emergency)
         self.cancel_button.grid(row=1, column=1, padx=10, pady=10, sticky="se")
 
         # Configure grid weights to make the emergency frame and canvas resize properly
@@ -85,7 +99,7 @@ class EmergencyApp:
 
 
 def main():
-    root = tk.Tk()
+    root = tk.CTk()
     app = EmergencyApp(root)
     root.mainloop()
 
