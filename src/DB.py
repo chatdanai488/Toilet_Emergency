@@ -42,7 +42,7 @@ class DB:
     
     def Fetch_Floor(self):
         with self.connection.cursor() as cursor:
-            sql = "SELECT * FROM dbo.FloorTb"
+            sql = "SELECT MapId, MapName, DateCrt, DateChg, PicPath FROM dbo.FloorTb"
             cursor.execute(sql)
             
             
