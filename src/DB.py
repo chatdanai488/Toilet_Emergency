@@ -67,6 +67,12 @@ class DB:
             cursor.execute(sql, (value,))
             cursor.commit()
             
+    def Edit_Floor(self,Data):
+        data = Data
+        with self.connection.cursor() as cursor:
+            sql="UPDATE dbo.FloorTb SET MapId = ?, MapName = ?, DateChg = ?, PicPath = ? WHERE Picpath = ?"
+            cursor.execute(sql, (data[0], data[1], data[2], data[3], data[4]))
+            cursor.commit()
 
 if __name__ == "__main__":
     Database = DB()

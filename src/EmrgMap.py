@@ -1,148 +1,100 @@
-import tkinter as tk
-from tkinter import filedialog, messagebox
+import customtkinter as tk
 from tkinter import ttk
-import Constants
-import Style
+from tkinter import filedialog
 import datetime
+from tkinter import messagebox
+from PIL import Image, ImageTk
 import os
 import shutil
-import DB
+import DB 
+import Constants
 
 DBO = DB.DB()
 
 class MapManagementApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("Map Management")
-        self.add_map_window = None
-        self.root.configure(background=Constants.Background_Color())
+        self.root.title("地圖管理")
+        self.root.geometry("800x600")
+        self.icon_path = "img\logo1.ico"
+        self.root.iconbitmap(self.icon_path)
 
-        self.width, self.height = Constants.get_screen_size()
-        self.root.geometry(f"{self.width}x{self.height}")
-
-        Style.button_style()
-        Style.checkbox_style()
-        # Create widgets
         self.create_widgets()
-        
+        self.image_path = None
+
     def create_widgets(self):
-        # Navigation frame
-        self.nav_frame = tk.Frame(self.root)
-        self.nav_frame.pack(fill="x")
+        # Navigation bar
+        nav_frame = tk.CTkFrame(self.root)
+        nav_frame.pack(fill=tk.X)
+        nav_label = tk.CTkLabel(nav_frame, text="地圖管理",
+                                font=("Helvetica", 16, "bold"))
+        nav_label.pack(side=tk.LEFT, padx=20, pady=10)
+
+        # Buttons
+        button_frame = tk.CTkFrame(self.root)
+        button_frame.pack(fill=tk.X)
+        add_button = tk.CTkButton(button_frame, text="新增地圖",
+                                  command=self.open_add_map)
+        add_button.grid(row=0, column=0, padx=10, pady=10)
+        delete_button = tk.CTkButton(
+            button_frame, text="批量刪除", command=self.delete_selected)
+        delete_button.grid(row=0, column=1, padx=10, pady=10)
+
+        close_window = tk.CTkButton(
+            button_frame, text="關閉", fg_color="red", command=self.close_window_).grid(row=0, column="2")
+
+        # Map data table
+        table_frame = tk.CTkFrame(self.root)
+        table_frame.pack(fill=tk.BOTH, expand=True)
+        self.table = ttk.Treeview(table_frame, columns=(
+            "Map ID", "Map Name", "Created Date", "Modified Date", "Image"))
+        self.table.heading("#0", text="序")
+        self.table.heading("Map ID", text="地圖編號")
+        self.table.heading("Map Name", text="地圖名稱")
+        self.table.heading("Created Date", text="創建日期")
+        self.table.heading("Modified Date", text="修改日期")
+        self.table.heading("Image", text="地圖影像")
+        self.table.pack(fill=tk.BOTH, expand=True)
+
+        # Bind double click event to edit record
+        self.table.bind("<Double-1>", self.edit_record)
+        self.Table_Add()
+
+    def close_window_(self):
+        self.root.destroy()
         
-        tk.Label(self.nav_frame, text="地圖管理", font=Constants.Font()).pack(side="left", padx=10)
-        
-        # Buttons frame
-        self.buttons_frame = tk.Frame(self.root)
-        self.buttons_frame.pack(fill="x", padx=10, pady=5)
+    def open_add_map(self):
+        self.add_modal = tk.CTkToplevel(self.root)
+        self.add_modal.title("新增地圖")
+        self.add_modal.transient(self.root)
 
-        self.new_map_button = ttk.Button(self.buttons_frame, text="新增地圖", command=self.add_map_window_function, style='New_Map_Btn.TButton')
-        self.new_map_button.pack(side="left", padx=5)
-        
-        self.delete_button = ttk.Button(self.buttons_frame, text="批量刪除", command=self.delete_maps, style="Del_Map_Btn.TButton")
-        self.delete_button.pack(side="left", padx=5)
-        
-        # Map table
-        Style.table_style()
+        #Map ID Label
+        map_id_label = tk.CTkLabel(self.add_modal, text="地圖編號")
+        map_id_label.grid(row=0, column=0, padx=10, pady=5)
+        validate_int = self.add_modal.register(self.validate_int)
+        map_id_entry = tk.CTkEntry(self.add_modal,validate="key", validatecommand=(validate_int, "%P"))
+        map_id_entry.grid(row=0, column=1, padx=10, pady=5)
 
-        # Create the LabelFrame with a border
-        self.map_table = ttk.LabelFrame(self.root, text="地圖資料表", borderwidth=2, relief="groove")
-        self.map_table.pack(fill="both", expand=True, padx=10, pady=5)
+        #Map Name Label
+        map_name_label = tk.CTkLabel(self.add_modal, text="地圖名稱")
+        map_name_label.grid(row=1, column=0, padx=10, pady=5)
+        map_name_entry = tk.CTkEntry(self.add_modal)
+        map_name_entry.grid(row=1, column=1, padx=10, pady=5)
 
-        # Apply the font to the text inside the LabelFrame
-        label_font = Constants.Font()  # Assuming Constants.Font() returns the desired font
-        self.map_table.config(labelwidget=tk.Label(self.map_table, font=label_font))
+        #Map Image Label
+        map_img_label = tk.CTkLabel(self.add_modal, text="地圖影像")
+        map_img_label.grid(row=2, column=0, padx=10, pady=5)
+        map_img_button = tk.CTkButton(self.add_modal, text="選擇檔案", command=self.Upload_Image)
+        map_img_button.grid(row=2, column=1, padx=10, pady=5)
+        self.map_img_path = tk.CTkLabel(self.add_modal, text="")
+        self.map_img_path.grid(row=3,column=0, padx=10, pady=5)
 
-        # Define headers and column widths
-        headers = ['序', '地圖編號', '地圖名稱', '創建日期', '修改日期', '操作', '']
-        col_widths = [5, 10, 20, 20, 20, 10, 5]
+        add_button = tk.CTkButton(self.add_modal, text="新增", command=lambda: self.save_data(
+            map_id_entry.get(), map_name_entry.get(), self.image_path))
+        add_button.grid(row=4, column=0, columnspan=2, padx=10, pady=10)
 
-        # Create a dictionary to store checkbox variables
-        self.checkbox_vars = {}
-
-        # Create labels for headers
-        for col, header in enumerate(headers):
-            background_color = "lightblue"
-            label = ttk.Label(self.map_table, text=header, width=col_widths[col], style='Table.TLabel', borderwidth=1, relief="solid", background=background_color)
-            label.grid(row=0, column=col, sticky="ew")
-
-        data = DBO.Fetch_Floor()
-        # Populate table with data
-        for row, row_data in enumerate(data, start=1):
-            for col, value in enumerate(row_data):
-                if col == 6:  # Check if it's the 7th column
-                    background_color = "lightblue" if row % 2 == 0 else "lightgrey"
-                    checkbox_var = tk.BooleanVar(value=False)  # Start with unchecked state
-                    checkbox = ttk.Checkbutton(self.map_table, variable=checkbox_var, style="TableBlue.TCheckbutton" if row % 2 == 0 else "TableGrey.TCheckbutton")
-                    checkbox.grid(row=row, column=col, sticky="ew", padx=5, pady=5)
-                    # Store checkbox variable with corresponding value of 1st column
-                    self.checkbox_vars[row_data[1]] = checkbox_var
-                else:
-                    background_color = "lightblue" if row % 2 == 0 else "lightgrey"
-                    label = ttk.Label(self.map_table, text=value, width=col_widths[col], style='Table.TLabel', borderwidth=1, relief="solid", background=background_color)
-                    label.grid(row=row, column=col, sticky="ew")
-
-        # Center the table horizontally within its parent widget
-        for i in range(len(headers)):
-            self.map_table.grid_columnconfigure(i, weight=1)
-
-        # Add an empty row at the bottom with a border
-        border_frame = ttk.Frame(self.map_table, height=2, relief="groove")
-        border_frame.grid(row=len(data) + 1, column=0, columnspan=len(headers), sticky="ew")
-
-        
-    def add_map_window_function(self):
-        self.add_map_window = tk.Toplevel(root)
-        self.add_map_window.title("Add Map")
-        self.add_map_window.geometry("300x300+100+100")
-        self.add_map_window.transient(self.root)
-
-        # First field with label and textbox
-        label1 = ttk.Label(self.add_map_window, text="Field 1:")
-        label1.grid(row=0, column=0, padx=5, pady=5, sticky="ew")
-        # Entry widget with validation to allow only integers
-        validate_int = self.add_map_window.register(self.validate_int)
-        textbox1 = ttk.Entry(self.add_map_window, validate="key", validatecommand=(validate_int, "%P"))
-        textbox1.grid(row=0, column=1, padx=5, pady=5)
-
-        # Second field with label and textbox
-        label2 = ttk.Label(self.add_map_window, text="Field 2:")
-        label2.grid(row=1, column=0, padx=5, pady=5, sticky="ew")
-        textbox2 = ttk.Entry(self.add_map_window)
-        textbox2.grid(row=1, column=1, padx=5, pady=5, sticky="ew")
-
-        # Upload button
-        upload_button = ttk.Button(self.add_map_window, text="Upload", command=self.upload_file)
-        upload_button.grid(row=2, column=0, padx=5, pady=5, sticky="ew")
-
-        # Label beside the button
-        label = ttk.Label(self.add_map_window, text="Upload Picture:", anchor="w")
-        label.grid(row=2, column=1, padx=5, pady=5, sticky="ew")
-
-        # Label for the picture path
-        self.picture_label = ttk.Label(self.add_map_window, text="", anchor="w")
-        self.picture_label.grid(row=3, column=0, columnspan=2, padx=5, pady=5, sticky="ew")
-
-        # Another button
-        save_button = ttk.Button(self.add_map_window, text="Save", command=lambda: self.save_data(textbox1.get(), textbox2.get(), self.picture_label.cget("text")))
-        save_button.grid(row=4, column=0, columnspan=2, padx=5, pady=5, sticky="ew")
-
-    def validate_int(self, new_value):
-        # Validate if the new value is an integer
-        if new_value.isdigit() or new_value == "":
-            return True
-        else:
-            return False
-        
-    def upload_file(self):
-        file_path = filedialog.askopenfilename()
-        if file_path:
-            print("Selected file:", file_path)
-            self.picture_label.config(text=file_path)
-
-    def save_data(self, field1, field2, picture_path):
-        # Check if all fields are filled
-        if field1 and field2 and picture_path:
+    def save_data(self,ID,Name,Image):
+        if ID and Name and Image:
             # Get current datetime
             current_datetime = datetime.datetime.now()
 
@@ -158,7 +110,7 @@ class MapManagementApp:
             if not os.path.exists(target_folder):
                 os.makedirs(target_folder)
 
-            _, picture_filename = os.path.split(picture_path)
+            _, picture_filename = os.path.split(Image)
             picture_name, picture_ext = os.path.splitext(picture_filename)
             picture_name = current_datetime.strftime("%Y%m%d_%H%M%S")
             # Generate new picture file name based on current datetime
@@ -166,30 +118,166 @@ class MapManagementApp:
             new_picture_path = os.path.join(target_folder, new_picture_filename)
 
             # Copy picture to target folder with new file name
-            shutil.copy(picture_path, new_picture_path)
+            shutil.copy(Image, new_picture_path)
 
             # Create an array and push the data
-            data = [field1, field2, formatted_datetime,formatted_datetime,new_picture_path]
+            data = [ID, Name, formatted_datetime,formatted_datetime,new_picture_path]
             print("Data:", data)
             # You can perform further actions with the data, such as saving it to a file or database
 
             DBO.Insert_Floor(data)
             # Close the add_map_window
-            self.add_map_window.destroy()
+            self.Clear_Table()
+            self.add_modal.destroy()
         else:
             messagebox.showwarning("Incomplete Data", "Please fill in all the fields.")
+        print("ok")
+
+    def Edit_Map(self, map_id, map_name, map_path):
+        self.edit_modal = tk.CTkToplevel(self.root)
+        self.edit_modal.title("新增地圖")
+        self.edit_modal.transient(self.root)
+
+        #Map ID Label
+        map_id_label = tk.CTkLabel(self.edit_modal, text="地圖編號")
+        map_id_label.grid(row=0, column=0, padx=10, pady=5)
+        validate_int = self.edit_modal.register(self.validate_int)
+        map_id_entry = tk.CTkEntry(self.edit_modal,validate="key", validatecommand=(validate_int, "%P"))
+        map_id_entry.grid(row=0, column=1, padx=10, pady=5)
+        map_id_entry.insert(0, map_id)  # Fill map_id if provided
+
+        #Map Name Label
+        map_name_label = tk.CTkLabel(self.edit_modal, text="地圖名稱")
+        map_name_label.grid(row=1, column=0, padx=10, pady=5)
+        map_name_entry = tk.CTkEntry(self.edit_modal)
+        map_name_entry.grid(row=1, column=1, padx=10, pady=5)
+        map_name_entry.insert(0, map_name)  # Fill map_name if provided
+
+        #Map Image Label
+        map_img_label = tk.CTkLabel(self.edit_modal, text="地圖影像")
+        map_img_label.grid(row=2, column=0, padx=10, pady=5)
+        map_img_button = tk.CTkButton(self.edit_modal, text="選擇檔案", command=self.Upload_Image)
+        map_img_button.grid(row=2, column=1, padx=10, pady=5)
+        self.map_img_path = tk.CTkLabel(self.edit_modal, text="")
+        self.map_img_path.grid(row=3,column=0, padx=10, pady=5)
+        self.map_img_path.configure(text=map_path)
+
+        # Update button to update the record
+        update_button = tk.CTkButton(self.edit_modal, text="更新", command=lambda: self.update_data(
+            map_path, map_id_entry.get(), map_name_entry.get(), self.image_path))
+        update_button.grid(row=4, column=0, columnspan=2, padx=10, pady=10)
+
+    def edit_record(self, event):
+        # Get the selected item from the treeview
+        selected_item = self.table.selection()
+        if selected_item:
+            # Get the data from the selected item
+            item_data = self.table.item(selected_item)
+            # Assuming the map ID is the first column
+            map_id = item_data['values'][0]
+            # Assuming the map name is the second column
+            map_name = item_data['values'][1]
+
+            map_path = item_data['values'][4]
+            # Open the add modal with the data pre-filled
+            self.Edit_Map(map_id, map_name, map_path)
+ 
+    def update_data(self,OldImagePath,ID,Name,Image):
+        if ID and Name and Image:
+            # Get current datetime
+            current_datetime = datetime.datetime.now()
+
+            # Format current datetime as YYYYMMDD_HHMMSS
+            formatted_datetime = current_datetime.strftime("%Y-%m-%dT%H:%M:%S")
+
+            if Image != OldImagePath:
+                os.remove(OldImagePath)
+                # Define target folder for copied picture
+                #current_directory = os.getcwd()
+                #target_folder = os.path.join(current_directory, "img")
+                target_folder = "img\\"
+                
+                # Create target folder if it doesn't exist
+                if not os.path.exists(target_folder):
+                    os.makedirs(target_folder)
+
+                _, picture_filename = os.path.split(Image)
+                picture_name, picture_ext = os.path.splitext(picture_filename)
+                picture_name = current_datetime.strftime("%Y%m%d_%H%M%S")
+                # Generate new picture file name based on current datetime
+                new_picture_filename = f"{picture_name}{picture_ext}"
+                new_picture_path = os.path.join(target_folder, new_picture_filename)
+
+                # Copy picture to target folder with new file name
+                shutil.copy(Image, new_picture_path)
+            
+            else:
+                new_picture_path = Image
+
+            # Create an array and push the data
+            data = [ID, Name, formatted_datetime,new_picture_path,OldImagePath]
+            # You can perform further actions with the data, such as saving it to a file or database
+            
+            
+            DBO.Edit_Floor(data)
+            # Close the add_map_window
+            self.Clear_Table()
+            self.edit_modal.destroy()
+
+        else:
+            messagebox.showwarning("Incomplete Data", "Please fill in all the fields.")
+        print("ok")
+
+    def Upload_Image(self):
+        file_path = filedialog.askopenfilename(
+            filetypes=[("Image files", "*.jpg;*.png")])
+        # Call a new function and pass the file_path as an argument
+        if file_path:
+            self.image_path = file_path
+            self.map_img_path.configure(text=self.image_path)
         
-    def delete_maps(self):
-        # Iterate through the checkbox_vars dictionary
-        for key, checkbox_var in self.checkbox_vars.items():
-            # Check if the checkbox is checked
-            if checkbox_var.get():
-                # Delete the row from the database based on the key associated with the checkbox
-                DBO.Delete_Floor(key)
+    def Table_Add(self):
+        data = DBO.Fetch_Floor()
+        for i , Values in enumerate(data):
+
+            self.table.insert("", "end", text = i+1,
+                          values=Values) 
+
+    def Clear_Table(self):
+        self.table.delete(*self.table.get_children())
+        self.Table_Add()
+
+    def delete_selected(self):
+        selected_item = self.table.selection()
+
+        # Check if an item is selected
+        if selected_item:
+            # Get the data from the selected item
+            item_data = self.table.item(selected_item)
+            if os.path.exists(item_data['values'][4]):
+                os.remove(item_data['values'][4])
+            DBO.Delete_Floor(item_data['values'][0])
+            
+            self.Clear_Table()
+
+        else:
+            # If no item is selected, display a message or perform other actions
+            messagebox.showinfo("No Item Selected",
+                                "Please select an item to delete.")
+
+    def validate_int(self, new_value):
+        # Validate if the new value is an integer
+        if new_value.isdigit() or new_value == "":
+            return True
+        else:
+            return False
+
+
+def main():
+    root = tk.CTk()
+    app = MapManagementApp(root)
+    root.mainloop()
 
 
 if __name__ == "__main__":
-    root = tk.Tk()
-    app = MapManagementApp(root)
-   
-    root.mainloop()
+    main()
