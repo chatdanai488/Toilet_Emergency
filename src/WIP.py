@@ -13,8 +13,9 @@ import pyautogui
 class MyApplication:
     def __init__(self, root):
         self.root = root
+        screen_height, screen_width = self.root.winfo_screenheight(), self.root.winfo_screenwidth()
         self.root.title("My New Project")
-        self.root.geometry("400x400")
+        self.root.geometry(f'{screen_height}x{screen_width}+0+0')
         self.root.update()
 
 
@@ -26,9 +27,11 @@ class MyApplication:
         self.active_button = None
         self.original_image_size = None
         self.active_dot = None
+        self.active_line = None
+        self.active_square = None
         self.original_image_width = None
         self.original_image_height = None
-        self.selected_dot_color = "black"
+        self.selected_dot_color = "#000000"
 
         self.create_add_location_display()  
         self.create_default_display()  
@@ -40,7 +43,12 @@ class MyApplication:
 
     def on_root_resize(self,event=None):
         self.resize_canvas()
-        self.resize_dot_position()
+        if self.active_button == self.dot_button:
+            self.resize_dot_position()
+        elif self.active_button == self.line_button:
+            self.resize_line_position()
+        elif self.active_button == self.square_button:
+            self.resize_square_position()
             
     # Other methods...
     def add_image(self):
@@ -107,6 +115,9 @@ class MyApplication:
                 new_height = canvas_height
                 new_width = int(canvas_height * aspect_ratio)
 
+            if new_height > canvas_height:  # Portrait or square orientation
+                new_height = canvas_height
+                new_width = int(canvas_height * aspect_ratio)
             # Resize the image
             resized_image = self.original_image.resize((new_width, new_height))
 
@@ -158,6 +169,7 @@ class MyApplication:
         # Bind the dot_button_clicked method when dot button is active
         if button == self.dot_button:
             self.dot_button_clicked()
+            self.clear_dot()
         # Bind the line_button_clicked method when line button is active
         elif button == self.line_button:
             self.line_button_clicked()
@@ -169,7 +181,7 @@ class MyApplication:
 
     def create_default_display(self):
         # Create default display
-        self.default_display = tk.CTkFrame(self.root, fg_color="red", width=200+self.root.winfo_width()*0.1)
+        self.default_display = tk.CTkFrame(self.root, fg_color="red", width=200)
         self.default_display.grid(row=0, column=1, rowspan = 3,sticky="nsew")
 
         self.top_widget = tk.CTkFrame(self.root, fg_color="green",height=1)
@@ -403,6 +415,14 @@ class MyApplication:
             self.dot_locations_history["dot"] = []
             # Reset history pointer
             self.history_pointer["dot"] = -1
+
+        if self.active_line:
+            self.image_canvas.delete(self.active_line[0])
+            self.active_line = None
+
+        if self.active_square:
+            self.image_canvas.delete(self.active_square[0])
+            self.active_square = None
         
     def edit_location(self):
         pass
@@ -442,6 +462,8 @@ class MyApplication:
                 dot_id, _, _ = self.active_dot
                 # Update the fill color of the active dot with the selected color
                 self.image_canvas.itemconfig(dot_id, fill=self.selected_dot_color)
+            elif self.active_line:
+                self.image_canvas.itemconfig(self.active_line[0], fill=self.selected_dot_color)
     def resize_dot_position(self):
         # Get the current dimensions of the image
         image_width = self.original_image_width
@@ -497,73 +519,263 @@ class MyApplication:
         # Get the coordinates of the click event
         x, y = event.x, event.y
 
-        # Check if there are already two dots present
-        if len(self.dot_locations_history["line"]) >= 2:
-            # Remove the oldest dot and the line connected to it
-            oldest_dot = self.dot_locations_history["line"].pop(0)
-            self.image_canvas.delete(self.active_line)
-            # Clear the active_line attribute
-            del self.active_line
-        else:
-            # Create a new dot at the clicked location
+        # Calculate relative coordinates based on the original image size
+        relative_x = x / self.original_image_width
+        relative_y = y / self.original_image_height
+            
+        if not self.active_dot and not self.active_line:
+            # If there's no active dot or line, create a new dot and update history
             dot_id = self.image_canvas.create_oval(x - 2, y - 2, x + 2, y + 2, fill=self.selected_dot_color)
-            # Set the active_line attribute to the dot ID
-            self.active_line = dot_id
+            self.active_dot = (dot_id, x, y)
+            self.update_history("line", ([relative_x, relative_y], None))
+            
+        elif self.active_dot:
+            # If there's an active dot, connect it to the new dot with a line and update history
+            x1, y1 = self.active_dot[1], self.active_dot[2]
+            line_id = self.image_canvas.create_line(x1, y1, x, y, fill=self.selected_dot_color)
+            self.image_canvas.delete(self.active_dot[0])  # Delete the active dot
+            self.active_dot = None  # Reset active dot
+            self.active_line = (line_id, x1, y1, x, y)
+            relative_x1 = x1 / self.original_image_width
+            relative_y1 = y1 / self.original_image_height
+            self.update_history("line", ([relative_x1, relative_y1], [relative_x, relative_y]))
+            
+        elif self.active_line:
+            # If there's an active line, delete it and connect the last dot to the new dot with a line, then update history
+            self.image_canvas.delete(self.active_line[0])  # Delete the active line
+            x1, y1 = self.active_line[3], self.active_line[4]  # Get the coordinates of the last dot
+            line_id = self.image_canvas.create_line(x1, y1, x, y, fill=self.selected_dot_color)
+            self.active_line = (line_id, x1, y1, x, y)
+            relative_x1 = x1 / self.original_image_width
+            relative_y1 = y1 / self.original_image_height
+            self.update_history("line", ([relative_x1, relative_y1], [relative_x, relative_y]))
 
-        # Update the dot location in the dot_locations_history dictionary
-        self.dot_locations_history["line"].append((x, y))
-
-        # Draw the line connecting the dots
-        if len(self.dot_locations_history["line"]) >= 2:
-            # Get the coordinates of the last two dots
-            x1, y1 = self.dot_locations_history["line"][-2]
-            x2, y2 = self.dot_locations_history["line"][-1]
-            # Draw a line between the last two dots
-            line_id = self.image_canvas.create_line(x1, y1, x2, y2, fill=self.selected_dot_color, width=2)
-            # Set the active_line attribute to the line ID
-            self.active_line = line_id
-
-        # Update the history for the line option
-        self.update_history("line", (x, y))
-
-
-
-
-        def rollback_line(self):
-            # Remove the last dot from the canvas
-            self.image_canvas.delete(self.dot_locations_history["line"].pop())
-
-            # Remove the last line from the canvas
-            self.image_canvas.delete(self.active_line)
-            # Clear the active_line attribute
-            del self.active_line
-
-            # Update the history pointer for the line option
+        print(self.dot_locations_history["line"])
+    def rollback_line(self):
+        line_history = self.dot_locations_history["line"]
+    
+        # Check if there's any history to rollback
+        if self.history_pointer["line"] > 0:
+            # Get the entry to rollback
+            entry = line_history[self.history_pointer["line"] - 1]
+            if entry[1] is None:
+                # If the second column is None, it indicates a dot
+                dot_x, dot_y = entry[0]
+                # Calculate canvas coordinates based on the relative positions
+                canvas_x = dot_x * self.original_image_width
+                canvas_y = dot_y * self.original_image_height
+                dot_id = self.image_canvas.create_oval(canvas_x - 2, canvas_y - 2, canvas_x + 2, canvas_y + 2, fill=self.selected_dot_color)
+                self.active_dot = (dot_id, canvas_x, canvas_y)
+                # Remove the current line from the canvas
+                self.image_canvas.delete(self.active_line[0])
+                self.active_line = None  # Reset active line
+            else:
+                # If the second column is not None, it indicates a line
+                # Calculate canvas coordinates based on the relative positions
+                x1, y1 = entry[0][0] * self.original_image_width, entry[0][1] * self.original_image_height
+                x2, y2 = entry[1][0] * self.original_image_width, entry[1][1] * self.original_image_height
+                line_id = self.image_canvas.create_line(x1, y1, x2, y2, fill=self.selected_dot_color)
+                # Remove the last dot from the canvas
+                self.image_canvas.delete(entry[0][0])
+                # Remove the current line from the canvas
+                self.image_canvas.delete(self.active_line[0])
+                # Update the active line
+                self.active_line = (line_id, x1, y1, x2, y2)
+                
+            # Decrement the history pointer
             self.history_pointer["line"] -= 1
-
     def rollforward_line(self):
-        # Add the dot back to the canvas
-        x, y = self.dot_locations_history["line"][self.history_pointer["line"]]
-        dot_id = self.image_canvas.create_oval(x - 2, y - 2, x + 2, y + 2, fill="black")
-        # Set the active_line attribute to the dot ID
-        self.active_line = dot_id
+        # Check if there are any lines ahead in the history
+        if self.history_pointer["line"] < len(self.dot_locations_history["line"]) - 1:
+            # Increment the history pointer for the line option
+            self.history_pointer["line"] += 1
 
-        # Draw the line connecting the dots
-        if len(self.dot_locations_history["line"]) >= 2:
-            # Get the coordinates of the last two dots
-            x1, y1 = self.dot_locations_history["line"][-2]
-            x2, y2 = self.dot_locations_history["line"][-1]
-            # Draw a line between the last two dots
-            line_id = self.image_canvas.create_line(x1, y1, x2, y2, fill=self.line_color, width=2)
-            # Set the active_line attribute to the line ID
-            self.active_line = line_id
+            # Get the next line location from history
+            next_location = self.dot_locations_history["line"][self.history_pointer["line"]]
 
-        # Update the history pointer for the line option
-        self.history_pointer["line"] += 1
+            # Check if the next location represents a dot
+            if next_location[1] is None:
+                # If the next location is a dot, create a dot
+                x, y = next_location[0][0] * self.original_image_width, next_location[0][1] * self.original_image_height
+                dot_id = self.image_canvas.create_oval(x - 2, y - 2, x + 2, y + 2, fill=self.selected_dot_color)
+                self.active_dot = (dot_id, x, y)
+            else:
+                # If the next location represents a line, create a line
+                if self.active_dot is not None:
+                    self.image_canvas.delete(self.active_dot[0])
+                    self.active_dot = None
+                else:
+                    self.image_canvas.delete(self.active_line[0])
+                x1, y1 = next_location[0][0] * self.original_image_width, next_location[0][1] * self.original_image_height
+                x2, y2 = next_location[1][0] * self.original_image_width, next_location[1][1] * self.original_image_height
+                line_id = self.image_canvas.create_line(x1, y1, x2, y2, fill=self.selected_dot_color)
+                self.active_line = (line_id, x1, y1, x2, y2)
+    def resize_line_position(self):
+        line_history = self.dot_locations_history["line"]
+    
+        # Check if there's any history to rollback
+        if self.history_pointer["line"] > 0:
+            # Get the entry to rollback
+            entry = line_history[self.history_pointer["line"]]
+            if entry[1] is None:
+                # If the second column is None, it indicates a dot
+                dot_x, dot_y = entry[0]
+                # Calculate canvas coordinates based on the relative positions
+                canvas_x = dot_x * self.original_image_width
+                canvas_y = dot_y * self.original_image_height
+                dot_id = self.image_canvas.create_oval(canvas_x - 2, canvas_y - 2, canvas_x + 2, canvas_y + 2, fill=self.selected_dot_color)
+                self.active_dot = (dot_id, canvas_x, canvas_y)
+                # Remove the current line from the canvas
+                if self.active_line:
+                    self.image_canvas.delete(self.active_line[0])
+                self.active_line = None  # Reset active line
+            else:
+                # If the second column is not None, it indicates a line
+                # Calculate canvas coordinates based on the relative positions
+                x1, y1 = entry[0][0] * self.original_image_width, entry[0][1] * self.original_image_height
+                x2, y2 = entry[1][0] * self.original_image_width, entry[1][1] * self.original_image_height
+                line_id = self.image_canvas.create_line(x1, y1, x2, y2, fill=self.selected_dot_color)
+                # Remove the last dot from the canvas
+                self.image_canvas.delete(entry[0][0])
+                # Remove the current line from the canvas
+                if self.active_line:
+                    self.image_canvas.delete(self.active_line[0])
+                # Update the active line
+                self.active_line = (line_id, x1, y1, x2, y2)
 
 
     def square_button_clicked(self):
-        pass  # Temporary empty method for square button
+        self.image_canvas.bind("<Button-1>", self.place_or_remove_square)
+    def place_or_remove_square(self,event):
+        # Get the coordinates of the click event
+        x, y = event.x, event.y
+
+        # Calculate relative coordinates based on the original image size
+        relative_x = x / self.original_image_width
+        relative_y = y / self.original_image_height
+
+        if not self.active_dot and not self.active_square:
+            # If there's no active dot or square, create a new dot and update history
+            dot_id = self.image_canvas.create_rectangle(x - 2, y - 2, x + 2, y + 2, fill=self.selected_dot_color)
+            self.active_dot = (dot_id, x, y)
+            self.update_history("square", ([relative_x, relative_y], None))
+
+        elif self.active_dot:
+            # If there's an active dot, create a square around it and update history
+            x1, y1 = self.active_dot[1], self.active_dot[2]
+            square_id = self.image_canvas.create_rectangle(x, y, x1, y1, fill=self.selected_dot_color, stipple="gray50")
+            self.image_canvas.delete(self.active_dot[0])  # Delete the active dot
+            self.active_dot = None  # Reset active dot
+            self.active_square = (square_id, x, y, x1, y1)
+            relative_x1 = x1 / self.original_image_width
+            relative_y1 = y1 / self.original_image_height
+            self.update_history("square", ([relative_x, relative_y], [relative_x1, relative_y1]))
+
+        elif self.active_square:
+            # If there's an active square, delete it and create a new square, then update history
+            self.image_canvas.delete(self.active_square[0])  # Delete the active square
+            x1, y1 = self.active_square[1], self.active_square[2]  # Get the coordinates of the last corner
+            square_id = self.image_canvas.create_rectangle(x, y, x1, y1, fill=self.selected_dot_color, stipple="gray50")
+            self.active_square = (square_id, x, y, x1, y1)
+            relative_x1 = x1 / self.original_image_width
+            relative_y1 = y1 / self.original_image_height
+            self.update_history("square", ([relative_x, relative_y], [relative_x1, relative_y1]))
+        print(self.dot_locations_history["square"])
+    def rollback_square(self):
+        square_history = self.dot_locations_history["square"]
+    
+        # Check if there's any history to rollback
+        if self.history_pointer["square"] > 0:
+            # Get the entry to rollback
+            entry = square_history[self.history_pointer["square"] - 1]
+            if entry[1] is None:
+                # If the second column is None, it indicates a dot
+                dot_x, dot_y = entry[0]
+                # Calculate canvas coordinates based on the relative positions
+                canvas_x = dot_x * self.original_image_width
+                canvas_y = dot_y * self.original_image_height
+                # Create a square at the specified position
+                square_id = self.image_canvas.create_rectangle(canvas_x - 2, canvas_y - 2, canvas_x + 2, canvas_y + 2, fill=self.selected_dot_color)
+                self.image_canvas.delete(self.active_square[0])
+                # Store the active square
+                self.active_dot = (square_id, canvas_x, canvas_y)
+                # Remove the current square from the canvas
+                
+                # Reset active square
+                self.active_square = None
+            else:
+                # If the second column is not None, it indicates a square
+                # Calculate canvas coordinates based on the relative positions
+                x1, y1 = entry[0][0] * self.original_image_width, entry[0][1] * self.original_image_height
+                x2, y2 = entry[1][0] * self.original_image_width, entry[1][1] * self.original_image_height
+                # Create a square at the specified position
+                square_id = self.image_canvas.create_rectangle(x1, y1, x2, y2, fill=self.selected_dot_color, stipple="gray50")
+                # Remove the current square from the canvas
+                if self.active_square:
+                    self.image_canvas.delete(self.active_square[0])
+                # Update the active square
+                self.active_square = (square_id, x1, y1, x2, y2)
+            
+            # Decrement the history pointer
+            self.history_pointer["square"] -= 1
+    def rollforward_square(self):
+        # Check if there are any squares ahead in the history
+        if self.history_pointer["square"] < len(self.dot_locations_history["square"]) - 1:
+            # Increment the history pointer for the square option
+            self.history_pointer["square"] += 1
+
+            # Get the next square location from history
+            next_location = self.dot_locations_history["square"][self.history_pointer["square"]]
+
+            # Check if the next location represents a dot
+            if next_location[1] is None:
+                # If the next location is a dot, create a dot
+                x, y = next_location[0][0] * self.original_image_width, next_location[0][1] * self.original_image_height
+                dot_id = self.image_canvas.create_rectangle(x - 2, y - 2, x + 2, y + 2, fill=self.selected_dot_color)
+                self.active_dot = (dot_id, x, y)
+            else:
+                # If the next location represents a square, create a square
+                if self.active_dot is not None:
+                    self.image_canvas.delete(self.active_dot[0])
+                    self.active_dot = None
+                elif self.active_square is not None:
+                    self.image_canvas.delete(self.active_square[0])
+                x1, y1 = next_location[0][0] * self.original_image_width, next_location[0][1] * self.original_image_height
+                x2, y2 = next_location[1][0] * self.original_image_width, next_location[1][1] * self.original_image_height
+                square_id = self.image_canvas.create_rectangle(x1, y1, x2, y2, fill=self.selected_dot_color,stipple="gray50")
+                self.active_square = (square_id, x1, y1, x2, y2)        
+    def resize_square_position(self):    
+        square_history = self.dot_locations_history["square"]
+        
+        # Check if there's any history to rollback
+        if self.history_pointer["square"] > 0:
+            # Get the entry to rollback
+            entry = square_history[self.history_pointer["square"]]
+            if entry[1] is None:
+                # If the second column is None, it indicates a dot
+                dot_x, dot_y = entry[0]
+                # Calculate canvas coordinates based on the relative positions
+                canvas_x = dot_x * self.original_image_width
+                canvas_y = dot_y * self.original_image_height
+                dot_id = self.image_canvas.create_rectangle(canvas_x - 2, canvas_y - 2, canvas_x + 2, canvas_y + 2, fill=self.selected_dot_color)
+                self.active_dot = (dot_id, canvas_x, canvas_y)
+                # Remove the current square from the canvas
+                if self.active_square:
+                    self.image_canvas.delete(self.active_square[0])
+                self.active_square = None  # Reset active square
+            else:
+                # If the second column is not None, it indicates a square
+                # Calculate canvas coordinates based on the relative positions
+                x1, y1 = entry[0][0] * self.original_image_width, entry[0][1] * self.original_image_height
+                x2, y2 = entry[1][0] * self.original_image_width, entry[1][1] * self.original_image_height
+                square_id = self.image_canvas.create_rectangle(x1, y1, x2, y2, fill=self.selected_dot_color)
+                # Remove the last dot from the canvas
+                self.image_canvas.delete(entry[0][0])
+                # Remove the current square from the canvas
+                if self.active_square:
+                    self.image_canvas.delete(self.active_square[0])
+                # Update the active square
+                self.active_square = (square_id, x1, y1, x2, y2)
 
 
     def update_history(self, option, location):
@@ -578,6 +790,7 @@ class MyApplication:
         if len(self.dot_locations_history[option]) > 5:
             # Clear the forward history if the maximum number of locations is exceeded
             self.dot_locations_history[option] = self.dot_locations_history[option][:5]
+            self.history_pointer[option] = 4
 
     def rollback(self):
         # Check the currently active option button
