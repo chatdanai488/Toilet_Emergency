@@ -11,27 +11,27 @@ import Constants
 
 DBO = DB.DB()
 
-class MapManagementApp:
+class EmrgMap:
     def __init__(self, root):
-        self.root = root
-        self.root.title("地圖管理")
-        self.root.geometry("800x600")
-        self.icon_path = "img\logo1.ico"
-        self.root.iconbitmap(self.icon_path)
+        self.EmrgMap = root
+        # self.EmrgMap.title("地圖管理")
+        # self.EmrgMap.geometry("800x600")
+        # self.icon_path = "img\logo1.ico"
+        # self.EmrgMap.iconbitmap(self.icon_path)
 
         self.create_widgets()
         self.image_path = None
 
     def create_widgets(self):
         # Navigation bar
-        nav_frame = tk.CTkFrame(self.root)
+        nav_frame = tk.CTkFrame(self.EmrgMap)
         nav_frame.pack(fill=tk.X)
         nav_label = tk.CTkLabel(nav_frame, text="地圖管理",
                                 font=("Helvetica", 16, "bold"))
         nav_label.pack(side=tk.LEFT, padx=20, pady=10)
 
         # Buttons
-        button_frame = tk.CTkFrame(self.root)
+        button_frame = tk.CTkFrame(self.EmrgMap)
         button_frame.pack(fill=tk.X)
         add_button = tk.CTkButton(button_frame, text="新增地圖",
                                   command=self.open_add_map)
@@ -40,11 +40,15 @@ class MapManagementApp:
             button_frame, text="批量刪除", command=self.delete_selected)
         delete_button.grid(row=0, column=1, padx=10, pady=10)
 
+        nextpage_button = tk.CTkButton(
+            button_frame, text="Next Page", command=self.delete_selected)
+        nextpage_button.grid(row=0, column=2, padx=10, pady=10)
+
         close_window = tk.CTkButton(
-            button_frame, text="關閉", fg_color="red", command=self.close_window_).grid(row=0, column="2")
+            button_frame, text="關閉", fg_color="red", command=self.close_window_).grid(row=0, column="3")
 
         # Map data table
-        table_frame = tk.CTkFrame(self.root)
+        table_frame = tk.CTkFrame(self.EmrgMap)
         table_frame.pack(fill=tk.BOTH, expand=True)
         self.table = ttk.Treeview(table_frame, columns=(
             "Map ID", "Map Name", "Created Date", "Modified Date", "Image"))
@@ -61,12 +65,12 @@ class MapManagementApp:
         self.Table_Add()
 
     def close_window_(self):
-        self.root.destroy()
+        self.EmrgMap.destroy()
         
     def open_add_map(self):
-        self.add_modal = tk.CTkToplevel(self.root)
+        self.add_modal = tk.CTkToplevel(self.EmrgMap)
         self.add_modal.title("新增地圖")
-        self.add_modal.transient(self.root)
+        self.add_modal.transient(self.EmrgMap)
 
         #Map ID Label
         map_id_label = tk.CTkLabel(self.add_modal, text="地圖編號")
@@ -134,9 +138,9 @@ class MapManagementApp:
         print("ok")
 
     def Edit_Map(self, map_id, map_name, map_path):
-        self.edit_modal = tk.CTkToplevel(self.root)
+        self.edit_modal = tk.CTkToplevel(self.EmrgMap)
         self.edit_modal.title("新增地圖")
-        self.edit_modal.transient(self.root)
+        self.edit_modal.transient(self.EmrgMap)
 
         #Map ID Label
         map_id_label = tk.CTkLabel(self.edit_modal, text="地圖編號")
@@ -275,7 +279,7 @@ class MapManagementApp:
 
 def main():
     root = tk.CTk()
-    app = MapManagementApp(root)
+    app = EmrgMap(root)
     root.mainloop()
 
 

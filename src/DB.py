@@ -74,6 +74,21 @@ class DB:
             cursor.execute(sql, (data[0], data[1], data[2], data[3], data[4]))
             cursor.commit()
 
+    def Insert_Map(self,Data):
+        data = Data
+        with self.connection.cursor() as cursor:
+            if data[6] == "dot":
+                x,y = data[5][0], data[5][1]
+                sql = "INSERT INTO dbo.FloorMapTb (fDate, fMapId, fMapName, fMapIp, fMapRmrk, fCoordsX1,fCoordsY1,fMapMode, fImg) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);"
+                cursor.execute(sql, (data[0], data[1], data[2], data[3], data[4], x,y ,data[6],data[7]))
+                cursor.commit()
+            else:
+                x,y = data[5][0][0], data[5][0][1]
+                x1,y1 = data[5][1][0], data[5][1][1]
+                sql = "INSERT INTO dbo.FloorMapTb (fDate, fMapId, fMapName, fMapIp, fMapRmrk, fCoordsX1,fCoordsY1,fCoordsX2,fCoordsY2,fMapMode, fImg) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
+                cursor.execute(sql, (data[0], data[1], data[2], data[3], data[4], x,y,x1,y1,data[6],data[7]))
+                cursor.commit()
+
 if __name__ == "__main__":
     Database = DB()
     Database.Fetch_Floor()
