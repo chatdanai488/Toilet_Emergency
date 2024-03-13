@@ -31,12 +31,15 @@ class MapManagementApp:
         add_button = tk.CTkButton(button_frame, text="新增地圖",
                                   command=self.show_add_modal)
         add_button.grid(row=0, column=0, padx=10, pady=10)
+        edit_button = tk.CTkButton(button_frame, text="修改地圖",
+                                  command= self.edit_record)
+        edit_button.grid(row=0, column=1, padx=10, pady=10)
         delete_button = tk.CTkButton(
             button_frame, text="批量刪除", command=self.delete_selected)
-        delete_button.grid(row=0, column=1, padx=10, pady=10)
+        delete_button.grid(row=0, column=2, padx=10, pady=10)
 
         close_window = tk.CTkButton(
-            button_frame, text="關閉", fg_color="red", command=self.close_window_).grid(row=0, column="2")
+            button_frame, text="關閉", fg_color="red", command=self.close_window_).grid(row=0, column="3")
 
         # Map data table
         table_frame = tk.CTkFrame(self.root)
@@ -51,11 +54,12 @@ class MapManagementApp:
         self.table.heading("Image", text="地圖影像")
         self.table.pack(fill=tk.BOTH, expand=True)
 
-        # Bind double click event to edit record
-        self.table.bind("<Double-1>", self.edit_record)
 
     def close_window_(self):
-        self.root.destroy()
+        confirm_btn = messagebox.askyesno("確認",
+                            "你確定嗎？")
+        if confirm_btn == True:
+            self.root.destroy()
 
     def show_add_modal(self):
         add_modal = tk.CTkToplevel(self.root)
@@ -64,16 +68,19 @@ class MapManagementApp:
 
         fm_map_id_label = tk.CTkLabel(add_modal, text="地圖編號")
         fm_map_id_label.grid(row=0, column=0, padx=10, pady=5)
+        global fm_map_id_entry
         fm_map_id_entry = tk.CTkEntry(add_modal)
         fm_map_id_entry.grid(row=0, column=1, padx=10, pady=5)
 
         fm_map_name_label = tk.CTkLabel(add_modal, text="地圖名稱")
         fm_map_name_label.grid(row=1, column=0, padx=10, pady=5)
+        global fm_map_name_entry
         fm_map_name_entry = tk.CTkEntry(add_modal)
         fm_map_name_entry.grid(row=1, column=1, padx=10, pady=5)
 
         fm_map_img_label = tk.CTkLabel(add_modal, text="地圖影像")
         fm_map_img_label.grid(row=2, column=0, padx=10, pady=5)
+        global fm_map_img_button
         fm_map_img_button = tk.CTkButton(
             add_modal, text="選擇檔案", command=self.select_image)
         fm_map_img_button.grid(row=2, column=1, padx=10, pady=5)
@@ -81,6 +88,7 @@ class MapManagementApp:
         add_button = tk.CTkButton(add_modal, text="新增", command=lambda: self.add_map(
             fm_map_id_entry.get(), fm_map_name_entry.get(), self.image_path))
         add_button.grid(row=3, column=0, columnspan=2, padx=10, pady=10)
+
 
     def show_add_modal2(self, map_id="", map_name="", map_time=""):
         add_modal = tk.CTkToplevel(self.root)
@@ -172,14 +180,17 @@ class MapManagementApp:
 
         # Check if an item is selected
         if selected_item:
+            confirm_delete = messagebox.askquestion("確認提醒",
+                                                    "你確定要刪除資料嗎？")
+            if confirm_delete == "yes":
             # Remove the selected item from the Treeview
-            self.table.delete(selected_item)
+                self.table.delete(selected_item)
         else:
             # If no item is selected, display a message or perform other actions
             messagebox.showinfo("No Item Selected",
                                 "Please select an item to delete.")
 
-    def edit_record(self, event):
+    def edit_record(self):
         # Get the selected item from the treeview
         selected_item = self.table.selection()
         if selected_item:
@@ -193,6 +204,9 @@ class MapManagementApp:
             map_create_time = item_data['values'][2]
             # Open the add modal with the data pre-filled
             self.show_add_modal2(map_id, map_name, map_create_time)
+        else:
+            messagebox.showinfo("No Item Selected",
+                                "Please select an item to delete.")   
 
 
 def main():
