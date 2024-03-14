@@ -9,15 +9,16 @@ import shutil
 import DB 
 import Constants
 
-DBO = DB.DB()
 
 class EmrgMap:
-    def __init__(self, root):
+    def __init__(self, root,master_app=None):
         self.EmrgMap = root
+        self.master_app = master_app
         # self.EmrgMap.title("地圖管理")
         # self.EmrgMap.geometry("800x600")
         # self.icon_path = "img\logo1.ico"
         # self.EmrgMap.iconbitmap(self.icon_path)
+        self.DBO = DB.DB()
 
         self.create_widgets()
         self.image_path = None
@@ -45,7 +46,7 @@ class EmrgMap:
         nextpage_button.grid(row=0, column=2, padx=10, pady=10)
 
         close_window = tk.CTkButton(
-            button_frame, text="關閉", fg_color="red", command=self.close_window_).grid(row=0, column="3")
+            button_frame, text="關閉", fg_color="red", command=self.return_button).grid(row=0, column="3")
 
         # Map data table
         table_frame = tk.CTkFrame(self.EmrgMap)
@@ -129,7 +130,7 @@ class EmrgMap:
             print("Data:", data)
             # You can perform further actions with the data, such as saving it to a file or database
 
-            DBO.Insert_Floor(data)
+            self.DBO.Insert_Floor(data)
             # Close the add_map_window
             self.Clear_Table()
             self.add_modal.destroy()
@@ -223,7 +224,7 @@ class EmrgMap:
             # You can perform further actions with the data, such as saving it to a file or database
             
             
-            DBO.Edit_Floor(data)
+            self.DBO.Edit_Floor(data)
             # Close the add_map_window
             self.Clear_Table()
             self.edit_modal.destroy()
@@ -241,7 +242,7 @@ class EmrgMap:
             self.map_img_path.configure(text=self.image_path)
         
     def Table_Add(self):
-        data = DBO.Fetch_Floor()
+        data = self.DBO.Fetch_Floor()
         for i , Values in enumerate(data):
 
             self.table.insert("", "end", text = i+1,
@@ -260,7 +261,7 @@ class EmrgMap:
             item_data = self.table.item(selected_item)
             if os.path.exists(item_data['values'][4]):
                 os.remove(item_data['values'][4])
-            DBO.Delete_Floor(item_data['values'][0])
+            self.DBO.Delete_Floor(item_data['values'][0])
             
             self.Clear_Table()
 
@@ -275,6 +276,9 @@ class EmrgMap:
             return True
         else:
             return False
+
+    def return_button(self):
+        self.master_app.show_floor()
 
 
 def main():

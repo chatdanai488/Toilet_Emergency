@@ -79,15 +79,29 @@ class DB:
         with self.connection.cursor() as cursor:
             if data[6] == "dot":
                 x,y = data[5][0], data[5][1]
-                sql = "INSERT INTO dbo.FloorMapTb (fDate, fMapId, fMapName, fMapIp, fMapRmrk, fCoordsX1,fCoordsY1,fMapMode, fImg) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);"
-                cursor.execute(sql, (data[0], data[1], data[2], data[3], data[4], x,y ,data[6],data[7]))
+                sql = "INSERT INTO dbo.FloorMapTb (fDate, fMapId, fMapName, fMapIp, fMapRmrk, fCoordsX1,fCoordsY1,fMapMode, fImg, fColor) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
+                cursor.execute(sql, (data[0], data[1], data[2], data[3], data[4], x,y ,data[6],data[7],data[8]))
                 cursor.commit()
             else:
                 x,y = data[5][0][0], data[5][0][1]
                 x1,y1 = data[5][1][0], data[5][1][1]
-                sql = "INSERT INTO dbo.FloorMapTb (fDate, fMapId, fMapName, fMapIp, fMapRmrk, fCoordsX1,fCoordsY1,fCoordsX2,fCoordsY2,fMapMode, fImg) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
-                cursor.execute(sql, (data[0], data[1], data[2], data[3], data[4], x,y,x1,y1,data[6],data[7]))
+                sql = "INSERT INTO dbo.FloorMapTb (fDate, fMapId, fMapName, fMapIp, fMapRmrk, fCoordsX1,fCoordsY1,fCoordsX2,fCoordsY2,fMapMode, fImg, fColor) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
+                cursor.execute(sql, (data[0], data[1], data[2], data[3], data[4], x,y,x1,y1,data[6],data[7],data[8]))
                 cursor.commit()
+        
+    def Fetch_Map(self):
+        with self.connection.cursor() as cursor:
+            sql = "SELECT fDate, fMapId, fMapName, fMapIp, fMapRmrk, fCoordsX1,fCoordsY1,fCoordsX2,fCoordsY2,fMapMode, fImg, fColor FROM dbo.FloorMapTb"
+            cursor.execute(sql)
+            
+            
+            rows = cursor.fetchall()
+            data_array = []
+            for row in rows:
+                data_array.append(list(row))
+
+            cursor.commit()
+            return data_array
 
 if __name__ == "__main__":
     Database = DB()

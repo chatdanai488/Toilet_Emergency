@@ -32,8 +32,10 @@ class EmrgFloor:
         self.active_square = None
         self.original_image_width = None
         self.original_image_height = None
-        self.selected_dot_color = "#000000"
+        self.selected_dot_color = "red"
         self.map_image = "img/F1.jpg"
+
+        self.shape_data = {}
 
         self.create_add_location_display()  
         self.create_default_display()  
@@ -52,6 +54,8 @@ class EmrgFloor:
                 self.resize_line_position()
             elif self.active_button == self.square_button:
                 self.resize_square_position()
+
+            self.refresh_table()
         except Exception as e:
             # Add error handling to catch any exceptions
             method_name = inspect.currentframe().f_code.co_name
@@ -222,7 +226,7 @@ class EmrgFloor:
             print(f"An error occurred in {method_name}: {e}")
     def add_return_button(self):
         # Add return button to the default display
-        return_button = tk.CTkButton(self.default_display, text="Return", command=self.show_default_display)
+        return_button = tk.CTkButton(self.default_display, text="Return", command=self.return_button)
         return_button.grid(row=0, column=0, padx=10, pady=2)
     def add_add_location_button(self):
         # Add add location button to the default display
@@ -244,7 +248,6 @@ class EmrgFloor:
             # Set column widths
             self.table.column("Location Name", width=150)
             self.table.column("Camera IP", width=150)
-
             # Create vertical scrollbar
             v_scrollbar = ttk.Scrollbar(self.default_display, orient="vertical", command=self.table.yview)
             self.table.configure(yscrollcommand=v_scrollbar.set)
@@ -265,6 +268,7 @@ class EmrgFloor:
 
             # Bind the callback to configure event
             self.table.bind("<Configure>", check_scrollbar_visibility)
+            self.table.bind("<<TreeviewSelect>>", self.on_row_select)
             
             # Initial check for scrollbar visibility
             check_scrollbar_visibility()
@@ -567,6 +571,8 @@ class EmrgFloor:
                 self.image_canvas.itemconfig(dot_id, fill=self.selected_dot_color)
             elif self.active_line:
                 self.image_canvas.itemconfig(self.active_line[0], fill=self.selected_dot_color)
+            elif self.active_square:
+                self.image_canvas.itemconfig(self.active_square[0], fill=self.selected_dot_color)
         except Exception as e:
             # Handle any errors during dot recoloring
             print(f"An error occurred in {method_name}: {e}")
@@ -1053,11 +1059,83 @@ class EmrgFloor:
        
         save_data.append(mode)
         save_data.append(self.map_image)
+        save_data.append(self.selected_dot_color)
         if save_data[3] and save_data[1] and save_data[2]:
             self.DBO.Insert_Map(save_data)
             self.show_default_display()
         else:
             messagebox.showwarning("Incomplete Data", "Please fill in all the fields.")
+
+    def return_button(self):
+        if self.master_app:
+            self.master_app.show_map()
+
+    def add_table(self):
+        data = self.DBO.Fetch_Map()
+
+        for row in data:
+            # Insert data into the table
+            self.table.insert('', "end", values=(row[2], row[3]))
+
+            # Create shape
+            shape_id = None
+            if row[9] == "square":
+                x1, y1 = row[5] * self.original_image_width, row[6] * self.original_image_height
+                x2, y2 = row[7] * self.original_image_width, row[8] * self.original_image_height
+                shape_id = self.image_canvas.create_rectangle(x1, y1, x2, y2, fill=row[11] if row[11] is not None else "black", stipple="gray50")
+            elif row[9] == "line":
+                x1, y1 = row[5] * self.original_image_width, row[6] * self.original_image_height
+                x2, y2 = row[7] * self.original_image_width, row[8] * self.original_image_height
+                shape_id = self.image_canvas.create_line(x1, y1, x2, y2, fill=row[11] if row[11] is not None else "black")
+            elif row[9] == "dot":
+                x1, y1 = row[5] * self.original_image_width, row[6] * self.original_image_height
+                shape_id = self.image_canvas.create_oval(x1-2, y1-2, x1+2, y1+2, fill=row[11] if row[11] is not None else "black")
+
+            # Store shape data in shape_data dictionary
+            self.shape_data.setdefault(str(row[2]), []).append({"shape_id": shape_id, "row": row})
+
+        # Now shape_data dictionary contains all the data grouped by the location name
+    def delete_table(self):
+        # Delete all items from the Treeview widget
+        self.table.delete(*self.table.get_children())
+
+        # Delete all shapes on the canvas and clear shape_data dictionary
+        for location_data in self.shape_data.values():
+            for data in location_data:
+                shape_id = data["shape_id"]
+                # Delete shape from the canvas
+                self.image_canvas.delete(shape_id)
+
+        # Clear shape_data dictionary
+        self.shape_data.clear()
+
+    def refresh_table(self):
+        self.delete_table()
+        self.add_table()
+
+    def on_row_select(self, event):
+        selected_item = self.table.selection()
+        if selected_item:
+            
+            item_data = self.table.item(selected_item)
+
+            location_name = item_data['values'][0]
+            self.refresh_table()
+            self.highlight_shape(location_name)
+        
+        
+
+    def highlight_shape(self, location_name):
+        # Retrieve the data associated with the specified location name
+        location_data = self.shape_data.get(str(location_name))
+        if location_data:
+            # Iterate through the shapes associated with the location
+            for data in location_data:
+                # Retrieve shape ID and row data
+                shape_id = data["shape_id"]
+                # Highlight the shape (you can customize this part based on your needs)
+                self.image_canvas.itemconfig(shape_id, outline="red", width=10)  
+                print(data["shape_id"],"selected")
 
 def main():
     root = tk.CTk()

@@ -1,7 +1,7 @@
 import customtkinter as tk
 from tkinter import ttk
 from PIL import ImageTk, Image
-
+import DB
 
 class EmergencyApp:
     def __init__(self, root):
@@ -20,6 +20,7 @@ class EmergencyApp:
         self.root.iconbitmap(self.icon_path)
 
         self.create_widgets()
+        self.Notification_test()
 
     def create_widgets(self):
 
@@ -45,15 +46,7 @@ class EmergencyApp:
             0, 0, anchor=tk.NW, image=self.map_symbol)
         # Load initial map image
         # Provide default map image
-        self.map_image = Image.open("img\map\F1.jpg")
-        # Resize image
-        # Specify the new size (width, height)
-        self.new_size = (self.screen_width, self.screen_height)
-        self.resized_image = self.map_image.resize(
-            self.new_size)
-        self.map_photo = ImageTk.PhotoImage(self.resized_image)
-        self.map_display = self.canvas.create_image(
-            0, 0, anchor=tk.NW, image=self.map_photo)
+        
 
         # Emergency alert
         self.alert_label = ttk.Label(
@@ -97,6 +90,29 @@ class EmergencyApp:
         canvas_height = event.height
         self.canvas.config(width=canvas_width, height=canvas_height)
 
+    def Notification_test(self):
+        DBO = DB.DB()
+        data = DBO.Fetch_Map()
+
+        self.screen_width = 800
+        self.screen_height = 400
+        self.map_image = Image.open(data[4][10])
+        
+        self.new_size = (self.screen_width, self.screen_height)
+        self.resized_image = self.map_image.resize(self.new_size)
+        
+        x1, y1 = data[4][5] * self.screen_width, data[4][6] * self.screen_height
+        x2, y2 = data[4][7] * self.screen_width, data[4][8] * self.screen_height
+        # Create a square at the specified position            
+        # Resize image
+        # Specify the new size (width, height)
+        
+        self.map_photo = ImageTk.PhotoImage(self.resized_image)
+        self.map_display = self.canvas.create_image(
+            0, 0, anchor=tk.NW, image=self.map_photo)
+        square_id = self.canvas.create_rectangle(x1, y1, x2, y2, fill="red", stipple="gray50")
+        
+        print(data)
 
 def main():
     root = tk.CTk()
