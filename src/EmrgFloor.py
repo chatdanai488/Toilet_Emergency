@@ -15,8 +15,8 @@ class EmrgFloor:
         self.root = root
         self.master_app = master_app
         screen_height, screen_width = self.root.winfo_screenheight(), self.root.winfo_screenwidth()
-        self.root.title("My New Project")
-        self.root.geometry(f'{screen_height}x{screen_width}+0+0')
+        # self.root.title("My New Project")
+        # self.root.geometry(f'{screen_height}x{screen_width}+0+0')
         self.root.update()
         self.DBO = DB.DB()
 
@@ -33,13 +33,15 @@ class EmrgFloor:
         self.original_image_width = None
         self.original_image_height = None
         self.selected_dot_color = "red"
-        self.map_image = "img/F1.jpg"
+        self.active_edit_shape = None
+        self.map_image = None
 
         self.shape_data = {}
 
         self.create_add_location_display()  
-        self.create_default_display()  
-        self.add_image()
+        self.create_default_display() 
+        if self.map_image: 
+            self.add_image()
 
         self.default_display.bind("<Configure>",self.on_root_resize)
         self.top_widget.bind("<Configure>",self.on_root_resize)
@@ -47,7 +49,8 @@ class EmrgFloor:
 
     def on_root_resize(self, event=None):
         try:
-            self.resize_canvas()
+            if self.map_image:
+                self.resize_canvas()
             if self.active_button == self.dot_button:
                 self.resize_dot_position()
             elif self.active_button == self.line_button:
@@ -93,8 +96,8 @@ class EmrgFloor:
 
             # Convert image for Tkinter
             self.image = ImageTk.PhotoImage(resized_image)
-
-            self.image_canvas = tk.CTkCanvas(self.root, width=new_width, height=new_height, borderwidth=0, highlightthickness=0)
+            if not hasattr(self, 'image_canvas'):
+                self.image_canvas = tk.CTkCanvas(self.root, width=new_width, height=new_height, borderwidth=0, highlightthickness=0)
             self.image_id = self.image_canvas.create_image(0, 0, anchor="nw", image=self.image)
             self.image_canvas.grid(row=1, column=2, padx=0, pady=0, sticky="nw")
 
@@ -205,7 +208,7 @@ class EmrgFloor:
     def create_default_display(self):
         try:
             # Create default display frame
-            self.default_display = tk.CTkFrame(self.root, fg_color="red", width=200)
+            self.default_display = tk.CTkFrame(self.root, fg_color="lightgreen", width=200)
             self.default_display.grid(row=0, column=1, rowspan=3, sticky="nsew")
 
             # Create top widget frame
@@ -217,6 +220,7 @@ class EmrgFloor:
             self.add_return_button()
             self.add_add_location_button()
             self.add_edit_button()
+            self.add_delete_button()
 
             # Create table
             self.create_table()
@@ -234,8 +238,14 @@ class EmrgFloor:
         add_location_button.grid(row=1, column=0, padx=10, pady=2)
     def add_edit_button(self):
         # Add edit button to the default display
-        edit_button = tk.CTkButton(self.default_display, text="Edit", command=self.edit_location)
-        edit_button.grid(row=2, column=0, padx=10, pady=2)
+        self.edit_button = tk.CTkButton(self.default_display, text="Edit", command=self.edit_location)
+        self.edit_button.grid(row=2, column=0, padx=10, pady=2)
+        self.edit_button.grid_forget()
+    def add_delete_button(self):
+        # Add edit button to the default display
+        self.delete_button = tk.CTkButton(self.default_display, text="Delete", fg_color="red", command=self.delete_location)
+        self.delete_button.grid(row=3, column=0, padx=10, pady=2)
+        self.delete_button.grid_forget()
     def create_table(self):
         try:
             # Create treeview widget
@@ -253,10 +263,10 @@ class EmrgFloor:
             self.table.configure(yscrollcommand=v_scrollbar.set)
 
             # Attach the scrollbar and the table using grid
-            self.table.grid(row=3, column=0, columnspan=2, sticky="nsew")
+            self.table.grid(row=4, column=0, columnspan=2, sticky="nsew")
 
             # Configure row and column weights for proper resizing
-            self.default_display.grid_rowconfigure(3, weight=1)
+            self.default_display.grid_rowconfigure(4, weight=1)
             self.default_display.grid_columnconfigure(0, weight=1)
 
             # Callback to handle scrollbar visibility
@@ -268,7 +278,8 @@ class EmrgFloor:
 
             # Bind the callback to configure event
             self.table.bind("<Configure>", check_scrollbar_visibility)
-            self.table.bind("<<TreeviewSelect>>", self.on_row_select)
+            #self.table.bind("<<TreeviewSelect>>", self.on_row_select)
+            self.table.bind("<Button-1>", self.on_row_select)
             
             # Initial check for scrollbar visibility
             check_scrollbar_visibility()
@@ -279,80 +290,84 @@ class EmrgFloor:
             print(f"An error occurred in {method_name}: {e}")
             # Optionally, raise the error to propagate it further
             raise
-    def create_add_location_display(self):
+    def create_add_location_display(self, edit_mode=False, location_data=None):
         try:
             method_name = inspect.currentframe().f_code.co_name
-            # Create add location display
-            self.add_location_display = tk.CTkFrame(self.root, fg_color="lightblue")
-            self.add_location_display.grid(row=0, column=1, rowspan=3, sticky="nsew")
-            
-            # Configure column weights for proper resizing
-            self.add_location_display.columnconfigure(0, weight=1)
-            
-            # Add return button to the add location display
-            return_button = tk.CTkButton(self.add_location_display, text="Return", command=self.show_default_display)
-            return_button.grid(row=0, column=0, padx=10, pady=2, sticky="ew", columnspan=3)
 
-            # Create option buttons frame
-            option_frame = tk.CTkFrame(self.add_location_display, fg_color=self.add_location_display.cget("fg_color"))
-            option_frame.grid(row=1, column=0, padx=1, pady=10, sticky="w")
+            if not hasattr(self, 'add_location_display'):
+                # Create add location display
+                self.add_location_display = tk.CTkFrame(self.root, fg_color="lightblue")
+                self.add_location_display.grid(row=0, column=1, rowspan=3, sticky="nsew")
+                
+                # Configure column weights for proper resizing
+                self.add_location_display.columnconfigure(0, weight=1)
+                
+                # Add return button to the add location display
+                return_button = tk.CTkButton(self.add_location_display, text="Return", command=self.show_default_display)
+                return_button.grid(row=0, column=0, padx=10, pady=2, sticky="ew", columnspan=3)
 
-            # Convert images to PhotoImage
-            self.dot_photo = tk.CTkImage(light_image=Image.open("img\\symbol\\Dot.png"), size=(10, 10))
-            self.line_photo = tk.CTkImage(light_image=Image.open("img\\symbol\\Line.png"), size=(10, 10))
-            self.square_photo = tk.CTkImage(light_image=Image.open("img\\symbol\\Square.png"), size=(10, 10))
+                # Create option buttons frame
+                option_frame = tk.CTkFrame(self.add_location_display, fg_color=self.add_location_display.cget("fg_color"))
+                option_frame.grid(row=1, column=0, padx=1, pady=10, sticky="w")
 
-            # Create buttons with images and text
-            self.dot_button = self.create_option_button(option_frame, self.dot_photo, "Dot", active=True)
-            self.dot_button.grid(row=0, column=0, padx=0, pady=0)
-            self.active_button = self.dot_button
+                # Convert images to PhotoImage
+                self.dot_photo = tk.CTkImage(light_image=Image.open("img\\symbol\\Dot.png"), size=(10, 10))
+                self.line_photo = tk.CTkImage(light_image=Image.open("img\\symbol\\Line.png"), size=(10, 10))
+                self.square_photo = tk.CTkImage(light_image=Image.open("img\\symbol\\Square.png"), size=(10, 10))
 
-            self.line_button = self.create_option_button(option_frame, self.line_photo, "Line")
-            self.line_button.grid(row=0, column=1, padx=0, pady=0)
+                # Create buttons with images and text
+                self.dot_button = self.create_option_button(option_frame, self.dot_photo, "Dot", active=True)
+                self.dot_button.grid(row=0, column=0, padx=0, pady=0)
+                self.active_button = self.dot_button
 
-            self.square_button = self.create_option_button(option_frame, self.square_photo, "Square")
-            self.square_button.grid(row=0, column=2, padx=0, pady=0)
+                self.line_button = self.create_option_button(option_frame, self.line_photo, "Line")
+                self.line_button.grid(row=0, column=1, padx=0, pady=0)
 
-            # Create rollback and rollforward buttons frame
-            roll_frame = tk.CTkFrame(self.add_location_display, fg_color=self.add_location_display.cget("fg_color"))
-            roll_frame.grid(row=1, column=1, padx=1, pady=10)
+                self.square_button = self.create_option_button(option_frame, self.square_photo, "Square")
+                self.square_button.grid(row=0, column=2, padx=0, pady=0)
 
-            # Convert images for rollback and rollforward buttons
-            self.rollback_photo = tk.CTkImage(light_image=Image.open("img\\symbol\\Rollback.png"), size=(20, 20))
-            self.rollforward_photo = tk.CTkImage(light_image=Image.open("img\\symbol\\Rollforward.png"), size=(20, 20))
+                # Create rollback and rollforward buttons frame
+                roll_frame = tk.CTkFrame(self.add_location_display, fg_color=self.add_location_display.cget("fg_color"))
+                roll_frame.grid(row=1, column=1, padx=1, pady=10)
 
-            # Create rollback and rollforward buttons with images and text
-            rollback_button = tk.CTkButton(roll_frame, image=self.rollback_photo, text="", compound="top", width=35, height=35, fg_color="blue", command=self.rollback)
-            rollback_button.grid(row=0, column=0, padx=0, pady=0)
+                # Convert images for rollback and rollforward buttons
+                self.rollback_photo = tk.CTkImage(light_image=Image.open("img\\symbol\\Rollback.png"), size=(20, 20))
+                self.rollforward_photo = tk.CTkImage(light_image=Image.open("img\\symbol\\Rollforward.png"), size=(20, 20))
 
-            rollforward_button = tk.CTkButton(roll_frame, image=self.rollforward_photo, text="", compound="top", width=35, height=35, fg_color="blue", command=self.rollforward)
-            rollforward_button.grid(row=0, column=1, padx=0, pady=0)
+                # Create rollback and rollforward buttons with images and text
+                rollback_button = tk.CTkButton(roll_frame, image=self.rollback_photo, text="", compound="top", width=35, height=35, fg_color="blue", command=self.rollback)
+                rollback_button.grid(row=0, column=0, padx=0, pady=0)
 
-            # Create color frame with button
-            color_frame = tk.CTkFrame(self.add_location_display, fg_color=self.add_location_display.cget("fg_color"))
-            color_frame.grid(row=1, column=2, padx=1, pady=10)
-            color_frame.columnconfigure(0, weight=0)
+                rollforward_button = tk.CTkButton(roll_frame, image=self.rollforward_photo, text="", compound="top", width=35, height=35, fg_color="blue", command=self.rollforward)
+                rollforward_button.grid(row=0, column=1, padx=0, pady=0)
 
-            # Create a button in the color_frame
-            self.color_button = tk.CTkButton(color_frame, text="", width=35, height=35, fg_color="blue", command=self.pick_color)
-            self.color_button.grid(row=0, column=0, padx=1, pady=10)
+                # Create color frame with button
+                color_frame = tk.CTkFrame(self.add_location_display, fg_color=self.add_location_display.cget("fg_color"))
+                color_frame.grid(row=1, column=2, padx=1, pady=10)
+                color_frame.columnconfigure(0, weight=0)
 
-            # Create a canvas for the color square
-            self.color_canvas = tk.CTkCanvas(self.color_button, width=20, height=20, background="black")
-            self.color_canvas.place(relx=0.5, rely=0.5, anchor="center")
+                # Create a button in the color_frame
+                self.color_button = tk.CTkButton(color_frame, text="", width=35, height=35, fg_color="blue", command=self.pick_color)
+                self.color_button.grid(row=0, column=0, padx=1, pady=10)
 
-            # Bind canvas events to propagate upwards
-            self.color_canvas.bind("<Button-1>", lambda event: self.color_button.invoke())
+                # Create a canvas for the color square
+                self.color_canvas = tk.CTkCanvas(self.color_button, width=20, height=20, background="black")
+                self.color_canvas.place(relx=0.5, rely=0.5, anchor="center")
 
-            # Create a box frame to contain the location information widgets
-            self.location_info_frame = tk.CTkFrame(self.add_location_display, fg_color=self.add_location_display.cget("fg_color"), border_width=2)
-            self.location_info_frame.grid(row=2, column=0, columnspan=3, padx=1, pady=10, sticky="nsew")
+                # Bind canvas events to propagate upwards
+                self.color_canvas.bind("<Button-1>", lambda event: self.color_button.invoke())
+
+                # Create a box frame to contain the location information widgets
+                self.location_info_frame = tk.CTkFrame(self.add_location_display, fg_color=self.add_location_display.cget("fg_color"), border_width=2)
+                self.location_info_frame.grid(row=2, column=0, columnspan=3, padx=1, pady=10, sticky="nsew")
 
             # Add location information labels and entries
-            self.add_location_info_widgets()
+            self.add_location_info_widgets(edit_mode, location_data)
 
             # Add save button to the add location display
-            save_button = tk.CTkButton(self.location_info_frame, text="Save",command=self.save_button)
+            save_button_text = "Update" if edit_mode else "Save"
+            save_button_command = self.update_data if edit_mode else self.save_button
+            save_button = tk.CTkButton(self.location_info_frame, text=save_button_text,command=save_button_command)
             save_button.grid(row=6, column=0, padx=10, pady=(10, 5), sticky="ew", columnspan=3)
 
         except Exception as e:
@@ -360,36 +375,45 @@ class EmrgFloor:
             print(f"An error occurred in {method_name}: {e}")
             # Optionally, raise the error to propagate it further
             raise
-    def add_location_info_widgets(self):
-        # Add location information labels and entries
-        validate_int = self.add_location_display.register(self.validate_int)
-        # Add 地點資訊 label
-        location_info_label = tk.CTkLabel(self.location_info_frame, text="地點資訊", font=("Arial", 16, "bold"))
-        location_info_label.grid(row=0, column=0, columnspan=3, padx=1, pady=10, sticky="nsew")
+    def add_location_info_widgets(self, edit_mode=False, location_data=None):
+        if not hasattr(self, 'location_info_label'):
+            # Add location information labels and entries
+            validate_int = self.add_location_display.register(self.validate_int)
+            # Add 地點資訊 label
+            self.location_info_label = tk.CTkLabel(self.location_info_frame, text="地點資訊", font=("Arial", 16, "bold"))
+            self.location_info_label.grid(row=0, column=0, columnspan=3, padx=1, pady=10, sticky="nsew")
 
-        # Add 地點代號 label and entry
-        location_code_label = tk.CTkLabel(self.location_info_frame, text="地點代號", font=("Arial", 12))
-        location_code_label.grid(row=1, column=0, padx=(10, 2), pady=5, sticky="e")
-        location_code_entry = tk.CTkEntry(self.location_info_frame, validate="key", validatecommand=(validate_int, "%P"))
-        location_code_entry.grid(row=1, column=1, columnspan=2, padx=2, pady=5, sticky="we")
+            # Add 地點代號 label and entry
+            self.location_code_label = tk.CTkLabel(self.location_info_frame, text="地點代號", font=("Arial", 12))
+            self.location_code_label.grid(row=1, column=0, padx=(10, 2), pady=5, sticky="e")
+            self.location_code_entry = tk.CTkEntry(self.location_info_frame, validate="key", validatecommand=(validate_int, "%P"))
+            self.location_code_entry.grid(row=1, column=1, columnspan=2, padx=2, pady=5, sticky="we")
 
-        # Add 地點名稱 label and entry
-        location_name_label = tk.CTkLabel(self.location_info_frame, text="地點名稱", font=("Arial", 12))
-        location_name_label.grid(row=2, column=0, padx=2, pady=5, sticky="e")
-        location_name_entry = tk.CTkEntry(self.location_info_frame)
-        location_name_entry.grid(row=2, column=1, columnspan=2, padx=2, pady=5, sticky="we")
+            # Add 地點名稱 label and entry
+            self.location_name_label = tk.CTkLabel(self.location_info_frame, text="地點名稱", font=("Arial", 12))
+            self.location_name_label.grid(row=2, column=0, padx=2, pady=5, sticky="e")
+            self.location_name_entry = tk.CTkEntry(self.location_info_frame)
+            self.location_name_entry.grid(row=2, column=1, columnspan=2, padx=2, pady=5, sticky="we")
 
-        # Add 監視器IP label and entry
-        camera_ip_label = tk.CTkLabel(self.location_info_frame, text="監視器IP", font=("Arial", 12))
-        camera_ip_label.grid(row=3, column=0, padx=2, pady=5, sticky="e")
-        camera_ip_entry = tk.CTkEntry(self.location_info_frame)
-        camera_ip_entry.grid(row=3, column=1, columnspan=2, padx=2, pady=5, sticky="we")
+            # Add 監視器IP label and entry
+            self.camera_ip_label = tk.CTkLabel(self.location_info_frame, text="監視器IP", font=("Arial", 12))
+            self.camera_ip_label.grid(row=3, column=0, padx=2, pady=5, sticky="e")
+            self.camera_ip_entry = tk.CTkEntry(self.location_info_frame)
+            self.camera_ip_entry.grid(row=3, column=1, columnspan=2, padx=2, pady=5, sticky="we")
 
-        # Add 備註 label and entry
-        remark_label = tk.CTkLabel(self.location_info_frame, text="備註", font=("Arial", 12))
-        remark_label.grid(row=4, column=0, padx=2, pady=(5, 0), sticky="e")
-        remark_entry = tk.CTkTextbox(self.location_info_frame, width=1, height=100, wrap="word")
-        remark_entry.grid(row=5, column=0, columnspan=3, padx=(10, 2), pady=(0, 1), sticky="we")
+            # Add 備註 label and entry
+            self.remark_label = tk.CTkLabel(self.location_info_frame, text="備註", font=("Arial", 12))
+            self.remark_label.grid(row=4, column=0, padx=2, pady=(5, 0), sticky="e")
+            self.remark_entry = tk.CTkTextbox(self.location_info_frame, width=1, height=100, wrap="word")
+            self.remark_entry.grid(row=5, column=0, columnspan=3, padx=(10, 2), pady=(0, 1), sticky="we")
+        
+        if edit_mode and location_data:
+            # If in edit mode and location data is provided, fill in the entries with existing data
+            self.location_code_entry.insert(0, location_data[0])
+            self.location_name_entry.insert(0, location_data[1])
+            self.camera_ip_entry.insert(0, location_data[2])
+            self.remark_entry.insert(tk.END, location_data[3])
+
     def pick_color(self):
         try:
             method_name = inspect.currentframe().f_code.co_name
@@ -419,18 +443,18 @@ class EmrgFloor:
 
             self.on_root_resize()
             self.clear_elements()
+            if self.active_edit_shape:
+                self.image_canvas.delete(self.active_edit_shape)
+                self.active_edit_shape = None
         except Exception as e:
             # Handle any errors during display switching
             print(f"An error occurred in {method_name}: {e}")
             # Optionally, raise the error to propagate it further
             raise
-    def show_add_location_display(self):
+    def show_add_location_display(self, edit_mode=False, location_data=None):
         try:
             method_name = inspect.currentframe().f_code.co_name
-            # Check if add_location_display already exists
-            if not hasattr(self, 'add_location_display'):
-                # Create add location display if it doesn't exist
-                self.create_add_location_display()
+            self.create_add_location_display(edit_mode=edit_mode, location_data=location_data)
 
             # Show add location display and hide default display
             self.add_location_display.lift()
@@ -445,6 +469,11 @@ class EmrgFloor:
                     self.square_button_clicked()
             
             self.on_root_resize()
+
+            if edit_mode:
+                self.create_current_active_shape()
+
+            self.delete_table()
         except Exception as e:
             # Handle any errors during display switching
             print(f"An error occurred in {method_name}: {e}")
@@ -509,6 +538,7 @@ class EmrgFloor:
                 self.image_canvas.delete(self.active_square[0])
                 self.active_square = None
 
+            
             self.dot_locations_history = {"dot": [], "line": [], "square": []}
             self.history_pointer = {"dot": -1, "line": -1, "square": -1}
         except Exception as e:
@@ -541,7 +571,9 @@ class EmrgFloor:
             if self.active_dot:
                 # Remove the existing dot from the canvas
                 self.image_canvas.delete(self.active_dot[0])
-
+            if self.active_edit_shape:
+                self.image_canvas.delete(self.active_edit_shape)
+                self.active_edit_shape = None
             # Create a new dot at the clicked location
             dot_id = self.image_canvas.create_oval(x - 2, y - 2, x + 2, y + 2, fill=self.selected_dot_color)
 
@@ -670,6 +702,10 @@ class EmrgFloor:
             # Calculate relative coordinates based on the original image size
             relative_x = x / self.original_image_width
             relative_y = y / self.original_image_height
+
+            if self.active_edit_shape:
+                self.image_canvas.delete(self.active_edit_shape)
+                self.active_edit_shape = None
                 
             if not self.active_dot and not self.active_line:
                 # If there's no active dot or line, create a new dot and update history
@@ -830,6 +866,10 @@ class EmrgFloor:
             # Calculate relative coordinates based on the original image size
             relative_x = x / self.original_image_width
             relative_y = y / self.original_image_height
+
+            if self.active_edit_shape:
+                self.image_canvas.delete(self.active_edit_shape)
+                self.active_edit_shape = None
 
             if not self.active_dot and not self.active_square:
                 # If there's no active dot or square, create a new dot and update history
@@ -1018,8 +1058,7 @@ class EmrgFloor:
             method_name = inspect.currentframe().f_code.co_name
             print(f"An error occurred in {method_name}: {e}")
 
-    def edit_location(self):
-            pass
+
 
     def save_button(self):
         save_data = []
@@ -1037,23 +1076,35 @@ class EmrgFloor:
                         save_data.append(widget.get('1.0', 'end'))  # Clear tk.CTkTextbox widget
 
         if self.active_button == self.dot_button:
-            position = self.dot_locations_history["dot"][self.history_pointer["dot"]]
-            mode = "dot"
-            if not position:
+            if self.history_pointer["dot"] < 0:
                 messagebox.showwarning("Incomplete Data", "Please pick a location in the map.")
                 return
+            else:
+                position = self.dot_locations_history["dot"][self.history_pointer["dot"]]
+                mode = "dot"
+                if not position:
+                    messagebox.showwarning("Incomplete Data", "Please pick a location in the map.")
+                    return
         elif self.active_button == self.line_button:
-            position = self.dot_locations_history["line"][self.history_pointer["line"]]
-            mode = "line"
-            if position[0] == None or position[1] == None:
+            if self.history_pointer["line"] < 0:
                 messagebox.showwarning("Incomplete Data", "Please pick a location in the map.")
                 return
+            else:    
+                position = self.dot_locations_history["line"][self.history_pointer["line"]]
+                mode = "line"
+                if position[0] == None or position[1] == None:
+                    messagebox.showwarning("Incomplete Data", "Please pick a location in the map.")
+                    return
         elif self.active_button == self.square_button:
-            position = self.dot_locations_history["square"][self.history_pointer["square"]]
-            mode = "square"
-            if position[0] == None or position[1] == None:
+            if self.history_pointer["square"] < 0:
                 messagebox.showwarning("Incomplete Data", "Please pick a location in the map.")
                 return
+            else:
+                position = self.dot_locations_history["square"][self.history_pointer["square"]]
+                mode = "square"
+                if position[0] == None or position[1] == None:
+                    messagebox.showwarning("Incomplete Data", "Please pick a location in the map.")
+                    return
         
         save_data.append(position)
        
@@ -1068,10 +1119,17 @@ class EmrgFloor:
 
     def return_button(self):
         if self.master_app:
+            if self.image_id:
+                self.image_canvas.delete(self.image_id)
+                self.map_image = None
+            self.clear()
+            self.delete_table()
+                
+
             self.master_app.show_map()
 
-    def add_table(self):
-        data = self.DBO.Fetch_Map()
+    def add_table(self,map_path):
+        data = self.DBO.Fetch_Map(map_path)
 
         for row in data:
             # Insert data into the table
@@ -1112,6 +1170,8 @@ class EmrgFloor:
     def refresh_table(self):
         self.delete_table()
         self.add_table()
+        self.edit_button.grid_forget()
+        self.delete_button.grid_forget()
 
     def on_row_select(self, event):
         selected_item = self.table.selection()
@@ -1119,11 +1179,14 @@ class EmrgFloor:
             
             item_data = self.table.item(selected_item)
 
-            location_name = item_data['values'][0]
+            self.edit_location_name = item_data['values'][0]
             self.refresh_table()
-            self.highlight_shape(location_name)
+            self.highlight_shape(self.edit_location_name)
+            self.show_hidden_button()
         
-        
+    def show_hidden_button(self):
+        self.edit_button.grid(row=2, column=0, padx=10, pady=2)
+        self.delete_button.grid(row=3, column=0, padx=10, pady=2)
 
     def highlight_shape(self, location_name):
         # Retrieve the data associated with the specified location name
@@ -1135,7 +1198,103 @@ class EmrgFloor:
                 shape_id = data["shape_id"]
                 # Highlight the shape (you can customize this part based on your needs)
                 self.image_canvas.itemconfig(shape_id, outline="red", width=10)  
-                print(data["shape_id"],"selected")
+
+
+    def edit_location(self):
+        location_name = self.edit_location_name
+        location_data = self.shape_data.get(str(location_name))
+        if location_data:
+            first_dict = location_data[0]
+            row_data = first_dict['row']  
+        prepare_data = [row_data[1],row_data[2],row_data[3],row_data[4]]
+        self.edit_shape_data = [[(row_data[5],row_data[6]),(row_data[7],row_data[8])],row_data[9],row_data[1],row_data[11]]
+        self.show_add_location_display(edit_mode=True,location_data=prepare_data)
+        
+    def delete_location(self):
+        location_name = self.edit_location_name
+        location_data = self.shape_data.get(str(location_name))
+        if location_data:
+            first_dict = location_data[0]
+            row_data = first_dict['row']  
+        self.DBO.Delete_Map(row_data[1],row_data[2])
+        self.refresh_table()
+        
+    def update_data(self):
+        update_data = []
+         # Get current datetime
+        current_datetime = datetime.datetime.now()
+
+        # Format current datetime as YYYYMMDD_HHMMSS
+        formatted_datetime = current_datetime.strftime("%Y-%m-%dT%H:%M:%S")
+        update_data.append(formatted_datetime)
+        for widget in self.location_info_frame.winfo_children():
+                if isinstance(widget, (tk.CTkEntry, tk.CTkTextbox)):
+                    if isinstance(widget, tk.CTkEntry):
+                        update_data.append(widget.get())
+                    elif isinstance(widget, tk.CTkTextbox):
+                        update_data.append(widget.get('1.0', 'end'))  # Clear tk.CTkTextbox widget
+        
+        if self.active_button == self.dot_button:
+            if self.history_pointer['dot'] < 0:
+                position = self.edit_shape_data[0]
+                mode = self.edit_shape_data[1]
+            else:
+                position = self.dot_locations_history["dot"][self.history_pointer["dot"]]
+                mode = "dot"
+                
+        elif self.active_button == self.line_button:
+            if self.history_pointer["line"] < 0:
+                position = self.edit_shape_data[0]
+                mode = self.edit_shape_data[1]
+            else:
+                position = self.dot_locations_history["line"][self.history_pointer["line"]]
+                mode = "line"
+                if position[1] == None:
+                    messagebox.showwarning("Incomplete Data", "Please pick a location in the map.")
+                    return
+        elif self.active_button == self.square_button:
+            if self.history_pointer["square"] < 0:
+                position = self.edit_shape_data[0]
+                mode = self.edit_shape_data[1]
+            else:
+                position = self.dot_locations_history["square"][self.history_pointer["square"]]
+                mode = "square"
+                if position[1] == None:
+                    messagebox.showwarning("Incomplete Data", "Please pick a location in the map.")
+                    return
+            
+        update_data.append(position)
+       
+        update_data.append(mode)
+        update_data.append(self.map_image)
+        update_data.append(self.selected_dot_color)
+        update_data.append(self.edit_shape_data[2])
+        if update_data[3] and update_data[1] and update_data[2]:
+            self.DBO.Update_Map(update_data)
+            self.show_default_display()
+        else:
+            messagebox.showwarning("Incomplete Data", "Please fill in all the fields.")
+
+    def create_current_active_shape(self):
+        coordinates = [self.edit_shape_data[0][0][0],self.edit_shape_data[0][0][1],self.edit_shape_data[0][1][0],self.edit_shape_data[0][1][1]]
+        print(coordinates)
+        if self.edit_shape_data[1] == "square":
+            x1, y1 = coordinates[0] * self.original_image_width, coordinates[1] * self.original_image_height
+            x2, y2 = coordinates[2] * self.original_image_width, coordinates[3] * self.original_image_height
+            self.active_edit_shape = self.image_canvas.create_rectangle(x1, y1, x2, y2, fill=self.edit_shape_data[3] if self.edit_shape_data[3] is not None else "black", stipple="gray50")
+        elif self.edit_shape_data[1] == "line":
+            x1, y1 = coordinates[0] * self.original_image_width, coordinates[1] * self.original_image_height
+            x2, y2 = coordinates[2] * self.original_image_width, coordinates[3] * self.original_image_height
+            self.active_edit_shape = self.image_canvas.create_line(x1, y1, x2, y2, fill=self.edit_shape_data[3] if self.edit_shape_data[3] is not None else "black")
+        elif self.edit_shape_data[1] == "dot":
+            x1, y1 = coordinates[0] * self.original_image_width, coordinates[1] * self.original_image_height
+            self.active_edit_shape = self.image_canvas.create_oval(x1-2, y1-2, x1+2, y1+2, fill=self.edit_shape_data[3] if self.edit_shape_data[3] is not None else "black")
+
+    def receive_value(self,value):
+        self.map_image = value
+        self.add_image()
+        self.on_root_resize()
+        self.add_table(value)
 
 def main():
     root = tk.CTk()

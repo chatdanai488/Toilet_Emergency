@@ -89,10 +89,10 @@ class DB:
                 cursor.execute(sql, (data[0], data[1], data[2], data[3], data[4], x,y,x1,y1,data[6],data[7],data[8]))
                 cursor.commit()
         
-    def Fetch_Map(self):
+    def Fetch_Map(self,map_path):
         with self.connection.cursor() as cursor:
-            sql = "SELECT fDate, fMapId, fMapName, fMapIp, fMapRmrk, fCoordsX1,fCoordsY1,fCoordsX2,fCoordsY2,fMapMode, fImg, fColor FROM dbo.FloorMapTb"
-            cursor.execute(sql)
+            sql = "SELECT fDate, fMapId, fMapName, fMapIp, fMapRmrk, fCoordsX1,fCoordsY1,fCoordsX2,fCoordsY2,fMapMode, fImg, fColor FROM dbo.FloorMapTb WHERE fImg = ?"
+            cursor.execute(sql,(map_path))
             
             
             rows = cursor.fetchall()
@@ -102,6 +102,27 @@ class DB:
 
             cursor.commit()
             return data_array
+        
+    def Update_Map(self,Data):
+        data = Data
+        with self.connection.cursor() as cursor:
+            if data[6] == "dot":
+                x,y = data[5][0], data[5][1]
+                sql = "UPDATE dbo.FloorMapTb SET fDate = ?, fMapId = ?, fMapName = ?, fMapIp = ?, fMapRmrk = ?, fCoordsX1 = ?,fCoordsY1 = ?,fMapMode = ?, fImg = ?, fColor = ?, WHERE fmapId = ? "
+                cursor.execute(sql, (data[0], data[1], data[2], data[3], data[4], x,y ,data[6],data[7],data[8],data[9]))
+                cursor.commit()
+            else:
+                x,y = data[5][0][0], data[5][0][1]
+                x1,y1 = data[5][1][0], data[5][1][1]
+                sql = "UPDATE dbo.FloorMapTb SET fDate = ?, fMapId = ?, fMapName = ?, fMapIp = ?, fMapRmrk = ?, fCoordsX1 = ?,fCoordsY1 = ?,fCoordsX2 = ?,fCoordsY2 = ?,fMapMode = ?, fImg = ?, fColor = ? WHERE fmapId = ?"
+                cursor.execute(sql, (data[0], data[1], data[2], data[3], data[4], x,y,x1,y1,data[6],data[7],data[8],data[9]))
+                cursor.commit()
+
+    def Delete_Map(self,Data1,Data2):
+        with self.connection.cursor() as cursor:
+            sql = "DELETE FROM dbo.FloorMapTb WHERE fMapId = ? AND fMapName = ?"  # Replace <column_name> with the actual column name
+            cursor.execute(sql, (Data1,Data2))
+            cursor.commit()
 
 if __name__ == "__main__":
     Database = DB()

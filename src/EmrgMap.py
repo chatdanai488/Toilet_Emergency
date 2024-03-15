@@ -37,16 +37,22 @@ class EmrgMap:
         add_button = tk.CTkButton(button_frame, text="新增地圖",
                                   command=self.open_add_map)
         add_button.grid(row=0, column=0, padx=10, pady=10)
-        delete_button = tk.CTkButton(
-            button_frame, text="批量刪除", command=self.delete_selected)
-        delete_button.grid(row=0, column=1, padx=10, pady=10)
+        self.delete_button = tk.CTkButton(
+            button_frame, text="批量刪除",fg_color="red", command=self.delete_selected)
+        self.delete_button.grid(row=0, column=1, padx=10, pady=10)
+        
+        
+        self.edit_button = tk.CTkButton(
+            button_frame, text="Edit",fg_color="yellow", command=self.Edit_Map)
+        self.edit_button.grid(row=0, column=2, padx=10, pady=10)
 
-        nextpage_button = tk.CTkButton(
-            button_frame, text="Next Page", command=self.delete_selected)
-        nextpage_button.grid(row=0, column=2, padx=10, pady=10)
+        self.nextpage_button = tk.CTkButton(
+            button_frame, text="Next Page", command=self.go_to_nextpage)
+        self.nextpage_button.grid(row=0, column=3, padx=10, pady=10)
+        
 
         close_window = tk.CTkButton(
-            button_frame, text="關閉", fg_color="red", command=self.return_button).grid(row=0, column="3")
+            button_frame, text="關閉", fg_color="red", command=self.return_button).grid(row=0, column="4")
 
         # Map data table
         table_frame = tk.CTkFrame(self.EmrgMap)
@@ -62,8 +68,9 @@ class EmrgMap:
         self.table.pack(fill=tk.BOTH, expand=True)
 
         # Bind double click event to edit record
-        self.table.bind("<Double-1>", self.edit_record)
+        self.table.bind("<Button-1>", self.pull_selection)
         self.Table_Add()
+        self.hide_button()
 
     def close_window_(self):
         self.EmrgMap.destroy()
@@ -138,7 +145,10 @@ class EmrgMap:
             messagebox.showwarning("Incomplete Data", "Please fill in all the fields.")
         print("ok")
 
-    def Edit_Map(self, map_id, map_name, map_path):
+    def Edit_Map(self):
+        map_id = self.map_value[0]
+        map_name = self.map_value[1]
+        map_path = self.map_value[2]
         self.edit_modal = tk.CTkToplevel(self.EmrgMap)
         self.edit_modal.title("新增地圖")
         self.edit_modal.transient(self.EmrgMap)
@@ -172,7 +182,7 @@ class EmrgMap:
             map_path, map_id_entry.get(), map_name_entry.get(), self.image_path))
         update_button.grid(row=4, column=0, columnspan=2, padx=10, pady=10)
 
-    def edit_record(self, event):
+    def pull_selection(self, event):
         # Get the selected item from the treeview
         selected_item = self.table.selection()
         if selected_item:
@@ -185,7 +195,9 @@ class EmrgMap:
 
             map_path = item_data['values'][4]
             # Open the add modal with the data pre-filled
-            self.Edit_Map(map_id, map_name, map_path)
+            self.map_value = [map_id, map_name, map_path]
+
+            self.show_hidden_button()
  
     def update_data(self,OldImagePath,ID,Name,Image):
         if ID and Name and Image:
@@ -228,6 +240,7 @@ class EmrgMap:
             # Close the add_map_window
             self.Clear_Table()
             self.edit_modal.destroy()
+            self.hide_button()
 
         else:
             messagebox.showwarning("Incomplete Data", "Please fill in all the fields.")
@@ -264,6 +277,7 @@ class EmrgMap:
             self.DBO.Delete_Floor(item_data['values'][0])
             
             self.Clear_Table()
+            self.hide_button()
 
         else:
             # If no item is selected, display a message or perform other actions
@@ -279,6 +293,19 @@ class EmrgMap:
 
     def return_button(self):
         self.master_app.show_floor()
+
+    def go_to_nextpage(self):
+        self.master_app.show_floor(self.map_value[2])
+
+    def hide_button(self):
+        self.nextpage_button.grid_forget()
+        self.edit_button.grid_forget()
+        self.delete_button.grid_forget()
+    
+    def show_hidden_button(self):
+        self.edit_button.grid(row=0, column=2, padx=10, pady=10)
+        self.nextpage_button.grid(row=0, column=3, padx=10, pady=10)
+        self.delete_button.grid(row=0, column=1, padx=10, pady=10)
 
 
 def main():
