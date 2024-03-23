@@ -124,6 +124,69 @@ class DB:
             cursor.execute(sql, (Data1,Data2))
             cursor.commit()
 
+    def Fetch_Indi_Map(self,Data):
+        with self.connection.cursor() as cursor:
+            sql = "SELECT fDate, fMapId, fMapName, fMapIp, fMapRmrk, fCoordsX1,fCoordsY1,fCoordsX2,fCoordsY2,fMapMode, fImg, fColor FROM dbo.FloorMapTb WHERE fMapName = ?"
+            cursor.execute(sql,(Data))
+            
+            
+            rows = cursor.fetchall()
+            data_array = []
+            for row in rows:
+                data_array.append(list(row))
+
+            cursor.commit()
+            return data_array
+
+    def Insert_Alert(self,Data):
+        data = Data
+        with self.connection.cursor() as cursor:
+            sql="""INSERT INTO Alerts (fAlertDate, fAlertLoc, fAlertIp, fAlertStatus)
+            VALUES (?, ?, ?, ?)"""
+            cursor.execute(sql, (data[0], data[1], data[2], data[3]))
+            cursor.commit()
+
+    def Fetch_Pending(self):
+        with self.connection.cursor() as cursor:
+            sql = "SELECT fAlertLoc, fAlertIp FROM dbo.Alerts WHERE fAlertStatus = 1"
+            cursor.execute(sql)
+            
+            
+            rows = cursor.fetchall()
+            data_array = []
+            for row in rows:
+                data_array.append(list(row))
+
+            cursor.commit()
+            return data_array
+
+    def Fetch_Alert_Log(self):
+        with self.connection.cursor() as cursor:
+            sql = "SELECT TOP 50 fAlertDate, fAlertLoc, fAlertIp,fAlertStatus FROM dbo.Alerts ORDER BY fAlertDate DESC"
+            cursor.execute(sql)
+            
+            
+            rows = cursor.fetchall()
+            data_array = []
+            for row in rows:
+                data_array.append(list(row))
+
+            cursor.commit()
+            return data_array
+
+    def Fetch_Pending_Map(self,Data):
+        with self.connection.cursor() as cursor:
+            sql = "SELECT fDate, fMapId, fMapName, fMapIp, fMapRmrk, fCoordsX1,fCoordsY1,fCoordsX2,fCoordsY2,fMapMode, fImg, fColor FROM dbo.FloorMapTb WHERE fMapName = ?"
+            cursor.execute(sql,Data)
+
+            rows = cursor.fetchall()
+            data_array = []
+            for row in rows:
+                data_array.append(list(row))
+
+            cursor.commit()
+            return data_array
+
 if __name__ == "__main__":
     Database = DB()
     Database.Fetch_Floor()

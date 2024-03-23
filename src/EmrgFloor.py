@@ -6,7 +6,6 @@ from tkinter import messagebox
 from tkinter import PhotoImage
 from PIL import Image, ImageTk
 from tkinter import colorchooser
-import Constants
 import inspect
 import DB
 
@@ -248,8 +247,11 @@ class EmrgFloor:
         self.delete_button.grid_forget()
     def create_table(self):
         try:
+            style = ttk.Style()
+            style.configure("Treeview", font=("Helvetica", 12))  # Adjust the font size here
+            style.configure("Treeview.Heading", font=("Helvetica", 12))
             # Create treeview widget
-            self.table = ttk.Treeview(self.default_display, columns=("Location Name", "Camera IP"), show="headings")
+            self.table = ttk.Treeview(self.default_display, columns=("Location Name", "Camera IP"), show="headings", style="Treeview")
 
             # Define headings
             self.table.heading("Location Name", text="Location Name")
@@ -1126,7 +1128,7 @@ class EmrgFloor:
             self.delete_table()
                 
 
-            self.master_app.show_map()
+            self.master_app.show_frames("EmrgMap")
 
     def add_table(self,map_path):
         data = self.DBO.Fetch_Map(map_path)
@@ -1169,7 +1171,7 @@ class EmrgFloor:
 
     def refresh_table(self):
         self.delete_table()
-        self.add_table()
+        self.add_table(self.map_image)
         self.edit_button.grid_forget()
         self.delete_button.grid_forget()
 

@@ -7,7 +7,6 @@ from PIL import Image, ImageTk
 import os
 import shutil
 import DB 
-import Constants
 
 
 class EmrgMap:
@@ -55,10 +54,14 @@ class EmrgMap:
             button_frame, text="關閉", fg_color="red", command=self.return_button).grid(row=0, column="4")
 
         # Map data table
+        style = ttk.Style()
+        style.configure("Treeview", font=("Helvetica", 12))  # Adjust the font size here
+        style.configure("Treeview.Heading", font=("Helvetica", 12))
+
         table_frame = tk.CTkFrame(self.EmrgMap)
         table_frame.pack(fill=tk.BOTH, expand=True)
         self.table = ttk.Treeview(table_frame, columns=(
-            "Map ID", "Map Name", "Created Date", "Modified Date", "Image"))
+            "Map ID", "Map Name", "Created Date", "Modified Date", "Image"), style="Treeview")
         self.table.heading("#0", text="序")
         self.table.heading("Map ID", text="地圖編號")
         self.table.heading("Map Name", text="地圖名稱")
@@ -292,7 +295,7 @@ class EmrgMap:
             return False
 
     def return_button(self):
-        self.master_app.show_floor()
+        self.master_app.show_frames("main")
 
     def go_to_nextpage(self):
         self.master_app.show_floor(self.map_value[2])
