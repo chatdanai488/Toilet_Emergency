@@ -141,14 +141,14 @@ class DB:
     def Insert_Alert(self,Data):
         data = Data
         with self.connection.cursor() as cursor:
-            sql="""INSERT INTO Alerts (fAlertDate, fAlertLoc, fAlertIp, fAlertStatus)
+            sql="""INSERT INTO Alerts (fAlertDate, fAlertLoc, fAlertId, fAlertStatus)
             VALUES (?, ?, ?, ?)"""
             cursor.execute(sql, (data[0], data[1], data[2], data[3]))
             cursor.commit()
 
     def Fetch_Pending(self):
         with self.connection.cursor() as cursor:
-            sql = "SELECT fAlertLoc, fAlertIp FROM dbo.Alerts WHERE fAlertStatus = 1"
+            sql = "SELECT fAlertLoc, fAlertId FROM dbo.Alerts WHERE fAlertStatus = 1"
             cursor.execute(sql)
             
             
@@ -162,7 +162,7 @@ class DB:
 
     def Fetch_Alert_Log(self):
         with self.connection.cursor() as cursor:
-            sql = "SELECT TOP 50 fAlertDate, fAlertLoc, fAlertIp,fAlertStatus FROM dbo.Alerts ORDER BY fAlertDate DESC"
+            sql = "SELECT TOP 50 fAlertDate, fAlertLoc, fAlertId,fAlertStatus FROM dbo.Alerts ORDER BY fAlertDate DESC"
             cursor.execute(sql)
             
             
@@ -179,6 +179,26 @@ class DB:
             sql = "SELECT fDate, fMapId, fMapName, fMapIp, fMapRmrk, fCoordsX1,fCoordsY1,fCoordsX2,fCoordsY2,fMapMode, fImg, fColor FROM dbo.FloorMapTb WHERE fMapName = ?"
             cursor.execute(sql,Data)
 
+            rows = cursor.fetchall()
+            data_array = []
+            for row in rows:
+                data_array.append(list(row))
+
+            cursor.commit()
+            return data_array
+
+    def Update_Emergency_Status(self,data):
+        with self.connection.cursor() as cursor:
+            sql="UPDATE dbo.Alerts SET fAlertStatus = 0 WHERE fAlertLoc = ? AND fAlertId = ?"
+            cursor.execute(sql, (data[0], data[1]))
+            cursor.commit()
+
+    def Active_Emergency_Check(self):
+        with self.connection.cursor() as cursor:
+            sql = "SELECT fAlertLoc FROM dbo.Alerts WHERE fAlertStatus = 1"
+            cursor.execute(sql)
+            
+            
             rows = cursor.fetchall()
             data_array = []
             for row in rows:

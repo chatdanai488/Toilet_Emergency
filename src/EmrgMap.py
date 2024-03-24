@@ -298,7 +298,7 @@ class EmrgMap:
         self.master_app.show_frames("main")
 
     def go_to_nextpage(self):
-        self.master_app.show_floor(self.map_value[2])
+        self.master_app.show_frames('Notification',self.map_value[2])
 
     def hide_button(self):
         self.nextpage_button.grid_forget()

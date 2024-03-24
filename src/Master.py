@@ -4,8 +4,11 @@ from EmrgMap import EmrgMap
 from Notification import Notification
 from main import MainApplication
 from DB import DB
+from Alert_Function import Alert_Function as AF
 import datetime
-
+import os
+import shutil
+import sys
 
 class MasterApp:
     def __init__(self, root):
@@ -17,6 +20,12 @@ class MasterApp:
         frame_color = "black"
 
         self.DBO = DB()
+        self.AF = AF()
+        self.active_frame = None
+
+        
+        # self.add_to_startup()
+
         # Create frame for EmrgFloor
         self.frame_floor = tk.CTkFrame(self.root, fg_color=frame_color)
         self.frame_floor.grid(row=0, column=0, sticky="nsew")
@@ -51,38 +60,90 @@ class MasterApp:
         self.show_frames("main")
 
     def open_frames(self, desig_frame):
-        for frame in self.frames:
-            if frame == desig_frame:
-                frame.grid(row=0, column=0, sticky="nsew")
-            else:
-                frame.grid_remove()
+        try:
+            for frame in self.frames:
+                if frame == desig_frame:
+                    frame.grid(row=0, column=0, sticky="nsew")
+                    self.active_frame = frame
+                else:
+                    frame.grid_remove()
+        except Exception as e:
+            print("An error occurred while opening frames:", e)
+            # Handle this error as needed
 
-    def show_floor(self,value):
-        # Show the frame for EmrgFloor and hide the frame for EmrgMap
-        for frame in self.frames:
-            if frame == self.frame_map:
-                self.frame_floor.grid()
-            else:
-                self.frame_map.grid_remove()
+        
 
-        self.emrg_floor.receive_value(value)
+    def show_frames(self, value, attribute=None):
+        try:
+            if value == "EmrgMap":
+                self.open_frames(self.frame_map)
+            elif value == "Notification":
+                self.open_frames(self.frame_notification)
+                self.notification.Refresh_Content()
+            elif value == "EmrgFloor":
+                self.open_frames(self.frame_floor)
+                self.emrg_floor.receive_value(attribute)
+            elif value == "main":
+                self.open_frames(self.frame_main)
+        except Exception as e:
+            print("An error occurred while showing frames:", e)
+            # Handle this error as needed
 
-    def show_frames(self, value):
-        if value == "EmrgMap":
-            self.open_frames(self.frame_map)
-        elif value == "Notification":
-            self.open_frames(self.frame_notification)
-        elif value == "EmrgFloor":
-            self.open_frames(self.frame_floor)
-        elif value == "main":
-            self.open_frames(self.frame_main)
+    def Emergency_Alert_Called(self, Value='B105'):
+        try:
+            current_datetime = datetime.datetime.now()
+            # Format current datetime as YYYYMMDD_HHMMSS
+            formatted_datetime = current_datetime.strftime("%Y-%m-%dT%H:%M:%S")
+            formatted_datetime2 = current_datetime.strftime("%Y-%m-%d %H:%M:%S")
 
-    def Emergency_Alert_Called(self):
-        current_datetime = datetime.datetime.now()
-        # Format current datetime as YYYYMMDD_HHMMSS
-        formatted_datetime = current_datetime.strftime("%Y-%m-%dT%H:%M:%S")
-        Data = [formatted_datetime, "C108", "TEST", 1]
-        self.DBO.Insert_Alert(Data)
+            check = self.DBO.Active_Emergency_Check()
+
+            active = any(i[0].strip() == Value for i in check)
+
+            if not active:
+                alert_id = current_datetime.strftime("%Y%m%d%H%M%S")
+                Data = [formatted_datetime, Value, alert_id, 1]
+                self.DBO.Insert_Alert(Data)
+
+            message = f"""There is an Emergency at: {Value}\nEmergency Occurred at: {formatted_datetime2}\nPlease Go There Immediately"""
+            self.AF.Send_Line_Message(message)
+            self.AF.Alert_Sound()
+            self.AF.show_notification(message)
+
+            if self.active_frame != self.frame_notification:
+                # Open a new notification window
+                print("okay")
+                self.show_frames('Notification')
+            self.main.refresh_table()
+        except Exception as e:
+            print("An error occurred during emergency alert:", e)
+            # Handle this error as needed
+
+        
+
+
+    def add_to_startup(self):
+        try:
+            file_path = sys.argv[0]
+            file_path = os.path.abspath(file_path)
+            # Get the path to the user's Startup folder
+            startup_folder = os.path.join(os.getenv('APPDATA'), 'Microsoft', 'Windows', 'Start Menu', 'Programs', 'Startup')
+
+            # Check if the executable has been added to startup before
+            startup_flag_file = os.path.join(startup_folder, "startup_flag.txt")
+            if os.path.exists(startup_flag_file):
+                print("Executable has already been added to startup.")
+                return
+
+            # Copy the executable file to the Startup folder
+            shutil.copy(file_path, startup_folder)
+            # Create a flag file to indicate that the executable has been added to startup
+            with open(startup_flag_file, "w") as flag_file:
+                flag_file.write("Added to startup")
+            print("Successfully added to startup!")
+        except Exception as e:
+            print(f"Error: {e}")      
+    
 
 def main():
     root = tk.CTk()

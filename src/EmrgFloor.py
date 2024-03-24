@@ -1296,7 +1296,6 @@ class EmrgFloor:
         self.map_image = value
         self.add_image()
         self.on_root_resize()
-        self.add_table(value)
 
 def main():
     root = tk.CTk()

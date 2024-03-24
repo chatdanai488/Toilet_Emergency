@@ -8,247 +8,284 @@ import inspect
 # import DB
 
 class Notification:
-    def __init__(self, root,master_app=None):
-        self.root = root
-        # self.root.title("notification")
-        self.master_app = master_app
-        # Set up grid configuration for responsiveness
-        self.root.grid_columnconfigure(1, weight=1)
-        self.root.grid_rowconfigure(0, weight=1)
+    def __init__(self, root, master_app=None):
+        try:
+            self.root = root
+            # self.root.title("notification")
+            self.master_app = master_app
+            # Set up grid configuration for responsiveness
+            self.root.grid_columnconfigure(1, weight=1)
+            self.root.grid_rowconfigure(0, weight=1)
 
-        # Set the window geometry to fullscreen
-        self.screen_width = self.root.winfo_screenwidth()
-        self.screen_height = self.root.winfo_screenheight()
-        # self.root.geometry(f"{self.screen_width}x{self.screen_height-100}-1+0")
-        self.root.update()
-        self.DBO = DB()
-        
-        self.create_widgets()
-        
-        self.column_count = 0
-        self.row_count = 0
-        self.count = 1
-        self.canvases = {}
-        self.messages = {}  # Dictionary to store message box references
-        self.delete_buttons = {}  # Dictionary to store delete buttons
-        self.canvas_image = {}
-        self.canvas_shape = {}
-        self.canvas_image_ids = {}  # Dictionary to store image IDs
-        self.canvas_images = {}  # Dictionary to store PhotoImage objects
-        self.buttons = {}
+            # Set the window geometry to fullscreen
+            self.screen_width = self.root.winfo_screenwidth()
+            self.screen_height = self.root.winfo_screenheight()
+            # self.root.geometry(f"{self.screen_width}x{self.screen_height-100}-1+0")
+            self.root.update()
+            self.DBO = DB()
+            
+            
+            self.create_widgets()
+            
+            self.column_count = 0
+            self.row_count = 0
+            self.count = 1
+            self.canvases = {}
+            self.messages = {}  # Dictionary to store message box references
+            self.delete_buttons = {}  # Dictionary to store delete buttons
+            self.canvas_image = {}
+            self.canvas_shape = {}
+            self.canvas_image_ids = {}  # Dictionary to store image IDs
+            self.canvas_images = {}  # Dictionary to store PhotoImage objects
+            self.buttons = {}
+            self.LocId = {}
 
-        self.active_button = None
-        self.active_canvas = None
-        self.active_canvas_image = None
-        self.active_canvas_shape = None
+            self.active_button = None
+            self.active_canvas = None
+            self.active_canvas_image = None
+            self.active_canvas_shape = None
 
-        self.pulse_colors = ["red", "blue", "green", "yellow"]  # Add more colors as needed
-        self.current_pulse_color_index = 0
+            self.pulse_colors = ["red", "blue", "green", "yellow"]  # Add more colors as needed
+            self.current_pulse_color_index = 0
 
-        
-        self.right_frame.bind("<Configure>",self.on_root_resize)
-        self.Search_Pending_Case()
-        # self.Notification_test()
+            
+            self.right_frame.bind("<Configure>",self.on_root_resize)
+            self.Refresh_Content()
+        except Exception as e:
+            print(f"An error occurred during initialization: {e}")
+            # Handle this error as needed
+
 
     def create_widgets(self):
-        #sidebar Frame
-        self.sidebar = tk.CTkFrame(self.root,width=280)
-        self.sidebar.grid_propagate(False)
-        self.sidebar.grid(column=0,row=0,sticky="nsew")
+        try:
+            # Sidebar Frame
+            self.sidebar = tk.CTkFrame(self.root, width=280)
+            self.sidebar.grid_propagate(False)
+            self.sidebar.grid(column=0, row=0, sticky="nsew")
 
-        self.return_button = tk.CTkButton(self.sidebar, text="Return", fg_color="red", command=self.Return_To_Main)
-        # Grid placement
-        self.return_button.grid(column=0,row=0,padx=10,pady=10)
-        #labelframe
-        self.Label_Frame = tk.CTkFrame(self.sidebar)
-        self.Label_Frame.grid(column=0,row=1,padx=10,pady=10)
+            self.return_button = tk.CTkButton(self.sidebar, text="Return", fg_color="red", command=self.Return_To_Main)
+            self.return_button.grid(column=0, row=0, padx=10, pady=10)
 
-        #bottonfram
-        self.button_Frame = tk.CTkFrame(self.sidebar,width=270,height=270)
-        self.button_Frame.grid_propagate(False)
-        self.button_Frame.grid(column=0,row=2,padx=5)
+            # LabelFrame
+            self.Label_Frame = tk.CTkFrame(self.sidebar)
+            self.Label_Frame.grid(column=0, row=1, padx=10, pady=10)
 
-        #loading_cavas
-        self.loading_canvas = tk.CTkCanvas(self.button_Frame)
-        self.loading_canvas.grid(column=0,row=0,sticky="nsew")
-        
-        # Load the image and resize
-        self.gif_path = "img\\Loading.gif"
-        self.gif = Image.open(self.gif_path)
-        self.gif_frames = []
-        for frame in ImageSequence.Iterator(self.gif):
-            frame = frame.resize((420, 420))
-            self.gif_frames.append(ImageTk.PhotoImage(frame))
-        self.frame_index = 0
-        self.load_image = self.loading_canvas.create_image(200, 200, image=self.gif_frames[0])
+            # ButtonFrame
+            self.button_Frame = tk.CTkFrame(self.sidebar, width=270, height=270)
+            self.button_Frame.grid_propagate(False)
+            self.button_Frame.grid(column=0, row=2, padx=5)
 
-        # Create Heading label
-        self.Heading = tk.CTkLabel(self.Label_Frame, text="Notification", font=("Arial", 24, "bold"), width=250)
-        # Grid placement
-        self.Heading.grid(column=0, row=0)
+            # Loading Canvas
+            self.loading_canvas = tk.CTkCanvas(self.button_Frame)
+            self.loading_canvas.grid(column=0, row=0, sticky="nsew")
 
+            # Load the image and resize
+            self.gif_path = "img\\Loading.gif"
+            self.gif = Image.open(self.gif_path)
+            self.gif_frames = []
+            for frame in ImageSequence.Iterator(self.gif):
+                frame = frame.resize((420, 420))
+                self.gif_frames.append(ImageTk.PhotoImage(frame))
+            self.frame_index = 0
+            self.load_image = self.loading_canvas.create_image(200, 200, image=self.gif_frames[0])
 
+            # Create Heading label
+            self.Heading = tk.CTkLabel(self.Label_Frame, text="Notification", font=("Arial", 24, "bold"), width=250)
+            self.Heading.grid(column=0, row=0)
 
-        # Message Frame
-        self.message_frame = tk.CTkFrame(self.sidebar, fg_color="lightblue")
-        self.message_frame.grid(column=0, row=3, padx=5, sticky="nsew")
+            # Message Frame
+            self.message_frame = tk.CTkFrame(self.sidebar, fg_color="lightblue")
+            self.message_frame.grid(column=0, row=3, padx=5, sticky="nsew")
 
-        # Right Side
-        self.right_frame = tk.CTkFrame(self.root, fg_color="lightgreen")
-        self.right_frame.grid(column=1, row=0, sticky="nsew")
-        self.right_frame.grid_columnconfigure(0, weight=1)
-        self.right_frame.grid_rowconfigure(0, weight=1)
+            # Right Side
+            self.right_frame = tk.CTkFrame(self.root, fg_color="lightgreen")
+            self.right_frame.grid(column=1, row=0, sticky="nsew")
+            self.right_frame.grid_columnconfigure(0, weight=1)
+            self.right_frame.grid_rowconfigure(0, weight=1)
 
-        # Configure grid weight for responsiveness
-        self.loading_canvas.rowconfigure(0,weight=1)
-        self.loading_canvas.columnconfigure(0,weight=1)
-        self.button_Frame.grid_rowconfigure(0, weight=1)
-        self.button_Frame.grid_columnconfigure(0, weight=1)
+            # Configure grid weight for responsiveness
+            self.loading_canvas.rowconfigure(0, weight=1)
+            self.loading_canvas.columnconfigure(0, weight=1)
+            self.button_Frame.grid_rowconfigure(0, weight=1)
+            self.button_Frame.grid_columnconfigure(0, weight=1)
 
+            # Start animation
+            self.animate()
+        except Exception as e:
+            print(f"An error occurred while creating widgets: {e}")
+            # Handle this error as needed
 
-        # Start animation
-        self.animate()
 
     
     def animate(self):
-        """Animate the GIF"""
-        self.frame_index = (self.frame_index + 1) % len(self.gif_frames)
-        self.loading_canvas.itemconfig(self.load_image, image=self.gif_frames[self.frame_index])
-        self.root.after(50, self.animate)  # Update every 50 milliseconds
+        try:
+            """Animate the GIF"""
+            self.frame_index = (self.frame_index + 1) % len(self.gif_frames)
+            self.loading_canvas.itemconfig(self.load_image, image=self.gif_frames[self.frame_index])
+            self.root.after(50, self.animate)  # Update every 50 milliseconds
+        except Exception as e:
+            print(f"An error occurred during animation: {e}")
+            # Handle this error as needed
+
 
 
     #create new button
-    def create_button(self, Data):
-        data = Data
-        Current_Message = f"Emergency At {data[0][2]}\nPlease go there as soon as possible"
-        # Create button
-        new_button = tk.CTkButton(self.button_Frame, text=f"{self.count}", width=50, height=50)
-        new_button.grid(column=self.column_count, row=self.row_count, padx=2, pady=2)
-        self.buttons[self.count] = new_button
-        # Set normal color
-        new_button.configure(fg_color="blue")
+    def create_button(self, Data, LocId):
+        try:
+            data = Data
+            Current_Message = f"Emergency At {data[0][2]}\nPlease go there as soon as possible"
+            # Create button
+            new_button = tk.CTkButton(self.button_Frame, text=f"{data[0][2]}", width=50, height=50)
+            new_button.grid(column=self.column_count, row=self.row_count, padx=2, pady=2)
+            self.buttons[self.count] = new_button
+            # Set normal color
+            new_button.configure(fg_color="blue")
 
-        # Bind click event to show_canvas method with button instance and index
-        new_button.configure(command=lambda button=new_button, idx=self.count: self.show_canvas(button, idx))
+            # Bind click event to show_canvas method with button instance and index
+            new_button.configure(command=lambda button=new_button, idx=self.count: self.show_canvas(button, idx))
 
-        # Create associated canvas
-        canvas = tk.CTkCanvas(self.right_frame, width=self.screen_width/2, height=self.screen_height)
-        canvas.grid(row=0, column=0, sticky="nsew")
-        self.canvases[self.count] = canvas
-        canvas.grid_forget()
+            # Create associated canvas
+            canvas = tk.CTkCanvas(self.right_frame, width=self.screen_width/2, height=self.screen_height)
+            canvas.grid(row=0, column=0, sticky="nsew")
+            self.canvases[self.count] = canvas
+            canvas.grid_forget()
 
-        # Create associated message box
-        message = tk.CTkLabel(self.message_frame, text=Current_Message, width=270, height=40)
-        message.grid(row=0, column=0, sticky="nsew")
-        self.messages[self.count] = message
-        message.grid_forget()
+            # Create associated message box
+            message = tk.CTkLabel(self.message_frame, text=Current_Message, width=270, height=40)
+            message.grid(row=0, column=0, sticky="nsew")
+            self.messages[self.count] = message
+            message.grid_forget()
 
-        delete_button = tk.CTkButton(self.right_frame, text="Delete", command=lambda idx=self.count: self.delete_item(idx))
-        delete_button.grid(row=1, column=0, sticky="se")
-        delete_button.grid_forget()  # Hide initially
-        self.delete_buttons[self.count] = delete_button
+            delete_button = tk.CTkButton(self.right_frame, text="Delete", command=lambda idx=self.count: self.delete_item(idx))
+            delete_button.grid(row=1, column=0, sticky="se")
+            delete_button.grid_forget()  # Hide initially
+            self.delete_buttons[self.count] = delete_button
 
-        if self.column_count != 4 :
-            self.column_count +=1
-        else:
-            self.column_count = 0
-            self.row_count +=1
-        
-        self.add_canvas_component(data[0], canvas)
-        self.count +=1
+            self.LocId[self.count] = LocId
 
+            if self.column_count != 4:
+                self.column_count += 1
+            else:
+                self.column_count = 0
+                self.row_count += 1
 
-        if hasattr(self, "loading_canvas"):
-            self.loading_canvas.grid_forget()
-        self.button_Frame.grid_rowconfigure(0, weight=0)
-        self.button_Frame.grid_columnconfigure(0, weight=0)
-        self.loading_canvas.rowconfigure(0,weight=0)
-        self.loading_canvas.columnconfigure(0,weight=0)
-        self.show_canvas(new_button, self.count-1)
+            self.add_canvas_component(data[0], canvas)
+            self.count += 1
+
+            if hasattr(self, "loading_canvas"):
+                self.loading_canvas.grid_forget()
+            self.button_Frame.grid_rowconfigure(0, weight=0)
+            self.button_Frame.grid_columnconfigure(0, weight=0)
+            self.loading_canvas.rowconfigure(0, weight=0)
+            self.loading_canvas.columnconfigure(0, weight=0)
+            self.show_canvas(new_button, self.count-1)
+        except Exception as e:
+            print(f"An error occurred while creating button: {e}")
+            # Handle this error as needed
+
 
         
 
     def show_canvas(self, button, index):
+        try:
+            if self.active_button:
+                self.active_button.configure(fg_color="blue")
+            button.configure(fg_color="darkblue")
+            self.active_button = button
 
-        if self.active_button:
-            self.active_button.configure(fg_color="blue")
-        button.configure(fg_color="darkblue")
-        self.active_button = button
+            self.active_canvas_image = self.canvas_image[index]
+            self.active_canvas_shape = self.canvas_shape[index]
+            for button_index, delete_button in self.delete_buttons.items():
+                if button_index == index:
+                    delete_button.grid(row=1, column=0, sticky="se")
+                else:
+                    delete_button.grid_forget()
 
-        self.active_canvas_image = self.canvas_image[index]
-        self.active_canvas_shape = self.canvas_shape[index]
-        for button_index, delete_button in self.delete_buttons.items():
-            if button_index == index:
-                delete_button.grid(row=1, column=0, sticky="se")
-            else:
-                delete_button.grid_forget()
+            for button_index, canvas in self.canvases.items():
+                if button_index == index:
+                    canvas.grid(row=0, column=0, sticky="nsew")
+                    self.active_canvas = canvas
+                else:
+                    canvas.grid_forget()
+            
+            for button_index, message in self.messages.items():
+                if button_index == index:
+                    message.grid(row=0, column=0, sticky="nsew")
+                else:
+                    message.grid_forget()
 
-        for button_index, canvas in self.canvases.items():
-            if button_index == index:
-                canvas.grid(row=0, column=0, sticky="nsew")
-                self.active_canvas = canvas
-            else:
-                canvas.grid_forget()
-        
-        for button_index, message in self.messages.items():
-            if button_index == index:
-                message.grid(row=0, column=0, sticky="nsew")
-            else:
-                message.grid_forget()
+            self.on_root_resize()
+            self.pulsate_shape()
+        except Exception as e:
+            print(f"An error occurred while showing canvas: {e}")
+            # Handle this error as needed
 
-        self.on_root_resize()
-        self.pulsate_shape()
         
 
     def delete_item(self, idx):
-        self.canvases[idx].destroy()  # Remove canvas from display
-        self.messages[idx].destroy()  # Remove message from display
-        del self.canvases[idx]
-        del self.messages[idx]
-        self.delete_buttons[idx].destroy()  # Hide delete button
-        del self.delete_buttons[idx]
-        self.active_button.destroy()
-        del self.canvas_shape[idx]
-        del self.canvas_image[idx]
-        self.active_button = None
-        self.active_canvas = None
-        self.active_canvas_image = None
-        self.active_canvas_shape = None
+        try:
+            self.canvases[idx].destroy()  # Remove canvas from display
+            self.messages[idx].destroy()  # Remove message from display
+            del self.canvases[idx]
+            del self.messages[idx]
+            self.delete_buttons[idx].destroy()  # Hide delete button
+            del self.delete_buttons[idx]
+            self.active_button.destroy()
+            del self.canvas_shape[idx]
+            del self.canvas_image[idx]
+            self.active_button = None
+            self.active_canvas = None
+            self.active_canvas_image = None
+            self.active_canvas_shape = None
 
-        self.reorganize_buttons()
+            self.DBO.Update_Emergency_Status(self.LocId[idx])
+            del self.LocId[idx]
+
+            self.master_app.main.refresh_table()
+
+            self.reorganize_buttons()
+        except Exception as e:
+            print(f"An error occurred while deleting item: {e}")
+            # Handle this error as needed
+
 
     
     def reorganize_buttons(self):
-        # Count the number of buttons (excluding canvases)
-        button_count = sum(1 for widget in self.button_Frame.winfo_children() if isinstance(widget, tk.CTkButton))
+        try:
+            # Count the number of buttons (excluding canvases)
+            button_count = sum(1 for widget in self.button_Frame.winfo_children() if isinstance(widget, tk.CTkButton))
+            print(button_count)
+            if button_count == 0:
+                # If there are no buttons, display the loading canvas again
+                self.loading_canvas.grid(row=0, column=0, sticky="nsew")
+                self.button_Frame.grid_rowconfigure(0, weight=1)
+                self.button_Frame.grid_columnconfigure(0, weight=1)
+                self.loading_canvas.rowconfigure(0, weight=1)
+                self.loading_canvas.columnconfigure(0, weight=1)
+            else:
+                # Remove all buttons
+                for widget in self.button_Frame.winfo_children():
+                    if isinstance(widget, tk.CTkButton):
+                        widget.grid_remove()
 
-        if button_count == 0:
-            # If there are no buttons, display the loading canvas again
-            self.loading_canvas.grid(row=0, column=0, sticky="nsew")
-            self.button_Frame.grid_rowconfigure(0, weight=1)
-            self.button_Frame.grid_columnconfigure(0, weight=1)
-            self.loading_canvas.rowconfigure(0,weight=1)
-            self.loading_canvas.columnconfigure(0,weight=1)
-        else:
-            # Remove all buttons
-            for widget in self.button_Frame.winfo_children():
-                if isinstance(widget, tk.CTkButton):
-                    widget.grid_remove()
+                # Re-add buttons in a grid layout
+                row = 0
+                col = 0
+                for widget in self.button_Frame.winfo_children():
+                    if isinstance(widget, tk.CTkButton):
+                        widget.grid(row=row, column=col, padx=2, pady=2)
+                        col += 1
+                        if col >= 5:  # Move to the next row after 5 columns
+                            col = 0
+                            row += 1
 
-            # Re-add buttons in a grid layout
-            row = 0
-            col = 0
-            for widget in self.button_Frame.winfo_children():
-                if isinstance(widget, tk.CTkButton):
-                    widget.grid(row=row, column=col, padx=2, pady=2)
-                    col += 1
-                    if col >= 5:  # Move to the next row after 5 columns
-                        col = 0
-                        row += 1
+                # Update row and column counts
+                self.row_count = (button_count + 4) // 5  # Add 4 to round up when there's a partial row
+                self.column_count = min(button_count, 5)  # Maximum of 5 buttons per row
+        except Exception as e:
+            print(f"An error occurred while reorganizing buttons: {e}")
+            # Handle this error as needed
 
-            # Update row and column counts
-            self.row_count = (button_count + 4) // 5  # Add 4 to round up when there's a partial row
-            self.column_count = min(button_count, 5)  # Maximum of 5 buttons per row
 
     def add_canvas_component(self,data,canvas):
         try:
@@ -398,43 +435,63 @@ class Notification:
 
 
     def Search_Pending_Case(self):
-        Pending = self.DBO.Fetch_Pending()
-        for i in Pending:
-            data = self.DBO.Fetch_Pending_Map(i[0])
-            self.create_button(data)
+        try:
+            Pending = self.DBO.Fetch_Pending()
+            for i in Pending:
+                data = self.DBO.Fetch_Pending_Map(i[0])
+                self.create_button(data, i)
+        except Exception as e:
+            print(f"An error occurred while searching for pending cases: {e}")
+            # Handle this error as needed
 
     def Return_To_Main(self):
-        self.master_app.show_frames("main")
-        self.delete_all_items()
+        try:
+            self.master_app.show_frames("main")
+            self.delete_all_items()
+        except Exception as e:
+            print(f"An error occurred while returning to the main frame: {e}")
+            # Handle this error as needed
+
 
     def delete_all_items(self):
-        # Destroy all canvases, messages, and buttons
-        for canvas in self.canvases.values():
-            canvas.destroy()
-        for message in self.messages.values():
-            message.destroy()
-        for button in self.delete_buttons.values():
-            button.destroy()
-        for button in self.buttons.values():
-            button.destroy()
+        try:
+            # Destroy all canvases, messages, and buttons
+            for canvas in self.canvases.values():
+                canvas.destroy()
+            for message in self.messages.values():
+                message.destroy()
+            for button in self.delete_buttons.values():
+                button.destroy()
+            for button in self.buttons.values():
+                button.destroy()
 
-        # Clear the lists
-        self.canvases.clear()
-        self.messages.clear()
-        self.delete_buttons.clear()
-        self.canvas_shape.clear()
-        self.canvas_image.clear()
+            # Clear the lists
+            self.canvases.clear()
+            self.messages.clear()
+            self.delete_buttons.clear()
+            self.canvas_shape.clear()
+            self.canvas_image.clear()
+            self.LocId.clear()
 
-        # Reset active attributes
-        if self.active_button:
-            self.active_button = None
-        self.active_canvas = None
-        self.active_canvas_image = None
-        self.active_canvas_shape = None
+            # Reset active attributes
+            if self.active_button:
+                self.active_button = None
+            self.active_canvas = None
+            self.active_canvas_image = None
+            self.active_canvas_shape = None
+        except Exception as e:
+            print(f"An error occurred while deleting all items: {e}")
+            # Handle this error as needed
+
 
     def Refresh_Content(self):
-        self.delete_all_items()
-        self.Search_Pending_Case()
+        try:
+            self.delete_all_items()
+            self.Search_Pending_Case()
+            self.reorganize_buttons()
+        except Exception as e:
+            print(f"An error occurred while refreshing content: {e}")
+            # Handle this error as needed
 
 def main():
     root = tk.CTk()
