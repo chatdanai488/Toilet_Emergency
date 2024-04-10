@@ -1,3 +1,5 @@
+from Get_Ip import get_ip
+from get_ssid import get_connected_wifi_ssid
 
 
 class InoFileEditor:
@@ -16,7 +18,7 @@ class InoFileEditor:
             print(e.args)
             return None
 
-    def update_code(self, my_wifi: str, my_ip: str, my_port: int):
+    def update_code(self, my_wifi: str, my_ip: str, my_port: int = 1234):
         self.code = """#include <WiFi.h>
 #include <WiFiClient.h>
 
@@ -90,6 +92,12 @@ Serial.println("Connected to server");
         original_code = self.read_code()
         if original_code is not None:
             self.upload_code(data)
+
+    def auto_update(self):
+        ip = get_ip()
+        ssid = get_connected_wifi_ssid()
+        update = self.update_code(ssid, ip)
+        return update
 
 
 # Example usage:

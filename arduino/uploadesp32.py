@@ -57,14 +57,15 @@ class ArduinoSketchUploader:
 
 def main():
     # Replace 'path_to_your_sketch' with the path to your Arduino sketch
-    sketch_path = r'C:\Users\diamo\OneDrive\เดสก์ท็อป\Toilet_Emergency\sender'
+    # sketch_path = r'C:\Users\diamo\OneDrive\เดสก์ท็อป\Toilet_Emergency\sender'
+    sketch_path = r'C:\Users\diamo\OneDrive\เดสก์ท็อป\Toilet_Emergency\sketch_test1'
     # Replace 'your_port_name' with the port where your ESP32 Dev Module is connected
-    port = 'COM4'  # Example port, replace it with your actual port
+    port = 'COM3'  # Example port, replace it with your actual port
 
     uploader = ArduinoSketchUploader(sketch_path, port)
     if uploader.compile_sketch():
         if uploader.upload_sketch():
-            uploader.communicate_serial()
+            # uploader.communicate_serial()
             print("ok")
 
 
