@@ -493,6 +493,9 @@ class Notification:
             print(f"An error occurred while refreshing content: {e}")
             # Handle this error as needed
 
+    def Call_Button_Frame(self):
+        return self.button_Frame
+
 def main():
     root = tk.CTk()
     app = Notification(root)

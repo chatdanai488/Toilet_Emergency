@@ -475,6 +475,8 @@ class EmrgFloor:
             if edit_mode:
                 self.create_current_active_shape()
 
+                self.color_canvas.configure(background=self.selected_dot_color)
+
             self.delete_table()
         except Exception as e:
             # Handle any errors during display switching

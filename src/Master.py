@@ -20,7 +20,8 @@ class MasterApp:
         frame_color = "black"
 
         self.DBO = DB()
-        self.AF = AF()
+        self.AF = AF(master_app=self)
+        
         self.active_frame = None
 
         
@@ -58,6 +59,7 @@ class MasterApp:
             frame.grid_columnconfigure(0, weight=1)
 
         self.show_frames("main")
+        self.root.protocol("WM_DELETE_WINDOW", self.cleanup_and_exit)
 
     def open_frames(self, desig_frame):
         try:
@@ -115,6 +117,16 @@ class MasterApp:
                 print("okay")
                 self.show_frames('Notification')
             self.main.refresh_table()
+
+            button_exist = 0
+
+            # button_frame = self.notification.Call_Button_Frame()
+            for widget in self.notification.button_Frame.winfo_children():
+                if isinstance(widget,tk.CTkButton) and widget.cget('text') == Value:
+                    button_exist +=1
+            
+            if button_exist == 0:
+                self.notification.Refresh_Content()
         except Exception as e:
             print("An error occurred during emergency alert:", e)
             # Handle this error as needed
@@ -143,12 +155,20 @@ class MasterApp:
             print("Successfully added to startup!")
         except Exception as e:
             print(f"Error: {e}")      
+
+    def cleanup_and_exit(self):
+        # Add any cleanup tasks here before exiting the program
+        self.AF.cleanup()  # Call the cleanup method of the Alert_Function object
+        self.root.destroy()  # Destroy the main Tkinter window
     
 
 def main():
     root = tk.CTk()
     app = MasterApp(root)
+    
     root.mainloop()
+
+
 
 if __name__ == "__main__":
     main()

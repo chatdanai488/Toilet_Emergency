@@ -107,7 +107,7 @@ class MainApplication:
             self.table.heading("Location", text="Location")
             self.table.heading("IP", text="IP")
             self.table.heading("Status", text="Status")
-            self.table.pack(side="top", fill="both", expand=True)  # Adjusted pack options
+            self.table.pack(side="bottom", fill="both", expand=True)  # Adjusted pack options
 
             # Set width for specific column
             self.table.column("No", width=50, stretch=False)  # Disable stretching for the Number column
