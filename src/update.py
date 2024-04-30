@@ -3,7 +3,7 @@ from get_ssid import get_connected_wifi_ssid
 
 
 class InoFileEditor:
-    def __init__(self, file_path):
+    def __init__(self, file_path = "arduino\\sketch_mar21a\\sketch_mar21a.ino"):
         self.file_path = file_path
 
     def read_code(self):
@@ -18,7 +18,7 @@ class InoFileEditor:
             print(e.args)
             return None
 
-    def update_code(self, my_wifi: str, my_ip: str, my_port: int = 1234):
+    def update_code(self, my_wifi: str, my_ip: str, message:str, my_port: int = 1234):
         self.code = """#include <WiFi.h>
 #include <WiFiClient.h>
 
@@ -57,10 +57,8 @@ if (!client.connected()) {
 
 if (buttonState == HIGH) {
     if (client.connected()) {
-    client.print("Button pressed!");
-    client.print(count);
+    client.print("%s");
     digitalWrite(ledPin, HIGH);
-    count = count +1;
     delay(200);
     }
 }else{
@@ -77,7 +75,7 @@ while (!client.connect(host, port)) {
 }
 Serial.println("Connected to server");
 }
-""" % (my_wifi, my_ip, my_port)
+""" % (my_wifi, my_ip, my_port, message)
         return self.code
 
     def upload_code(self, data):
@@ -93,10 +91,10 @@ Serial.println("Connected to server");
         if original_code is not None:
             self.upload_code(data)
 
-    def auto_update(self):
+    def auto_update(self,value):
         ip = get_ip()
         ssid = get_connected_wifi_ssid()
-        update = self.update_code(ssid, ip)
+        update = self.update_code(ssid, ip, value)
         return update
 
 

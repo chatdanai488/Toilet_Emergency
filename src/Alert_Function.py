@@ -75,7 +75,7 @@ class Alert_Function():
                         break
                     print("Received message:", data.decode())
                     if data.decode():
-                        self.Master.Emergency_Alert_Called(data.decode())
+                        self.Master.Emergency_Alert_Called(data.decode().split())
                     conn.close()
                 except OSError as e:
                     print(f"Socket operation failed: {e}")

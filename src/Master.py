@@ -3,6 +3,7 @@ from EmrgFloor import EmrgFloor
 from EmrgMap import EmrgMap
 from Notification import Notification
 from main import MainApplication
+from EmrgCompiler import EmrgCompiler
 from DB import DB
 from Alert_Function import Alert_Function as AF
 import datetime
@@ -43,13 +44,18 @@ class MasterApp:
         self.frame_notification = tk.CTkFrame(self.root, fg_color=frame_color)
         self.frame_notification.grid(row=0, column=0, sticky="nsew")
 
+        # Create frame for Compiler
+        self.frame_compiler = tk.CTkFrame(self.root, fg_color=frame_color)
+        self.frame_compiler.grid(row=0, column=0, sticky="nsew")
+
         # Instantiate EmrgFloor, EmrgMap, MainApplication, and Notification within their respective frames
         self.emrg_floor = EmrgFloor(self.frame_floor, master_app=self)
         self.emrg_map = EmrgMap(self.frame_map, master_app=self)
         self.main = MainApplication(self.frame_main, master_app=self)
         self.notification = Notification(self.frame_notification, master_app=self)
-
-        self.frames = [self.frame_floor, self.frame_map, self.frame_main, self.frame_notification]
+        self.emrg_compiler = EmrgCompiler(self.frame_compiler, master_app=self)
+        
+        self.frames = [self.frame_floor, self.frame_map, self.frame_main, self.frame_notification, self.frame_compiler]
 
         # Configure row and column weights for root and frames
         for frame in self.frames:
@@ -87,6 +93,9 @@ class MasterApp:
                 self.emrg_floor.receive_value(attribute)
             elif value == "main":
                 self.open_frames(self.frame_main)
+            elif value == "EmrgCompiler":
+                self.open_frames(self.frame_compiler)
+                self.emrg_compiler.receive_value(attribute)
         except Exception as e:
             print("An error occurred while showing frames:", e)
             # Handle this error as needed
@@ -100,14 +109,14 @@ class MasterApp:
 
             check = self.DBO.Active_Emergency_Check()
 
-            active = any(i[0].strip() == Value for i in check)
+            active = any(i[0].strip() == Value[0] for i in check)
 
             if not active:
                 alert_id = current_datetime.strftime("%Y%m%d%H%M%S")
-                Data = [formatted_datetime, Value, alert_id, 1]
+                Data = [formatted_datetime, Value[0], alert_id, 1]
                 self.DBO.Insert_Alert(Data)
 
-            message = f"""There is an Emergency at: {Value}\nEmergency Occurred at: {formatted_datetime2}\nPlease Go There Immediately"""
+            message = f"""There is an Emergency at: {Value[0]}\nEmergency Occurred at: {formatted_datetime2}\nPlease Go There Immediately"""
             self.AF.Send_Line_Message(message)
             self.AF.Alert_Sound()
             self.AF.show_notification(message)

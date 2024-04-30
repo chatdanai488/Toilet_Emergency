@@ -6,7 +6,7 @@ sys.stdin.reconfigure(encoding="utf-8")
 
 
 class ArduinoSketchUploader:
-    def __init__(self, sketch_path, port="COM3", upload_speed=115200):
+    def __init__(self, sketch_path ="arduino\\sketch_mar21a", port="COM3", upload_speed=115200):
         self.sketch_path = sketch_path
         self.port = port
         self.upload_speed = upload_speed
@@ -62,7 +62,7 @@ def main():
     # Replace 'your_port_name' with the port where your ESP32 Dev Module is connected
     port = 'COM3'  # Example port, replace it with your actual port
 
-    uploader = ArduinoSketchUploader(sketch_path, port)
+    uploader = ArduinoSketchUploader()
     if uploader.compile_sketch():
         if uploader.upload_sketch():
             # uploader.communicate_serial()

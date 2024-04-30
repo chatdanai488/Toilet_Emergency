@@ -49,7 +49,7 @@ class Notification:
             self.current_pulse_color_index = 0
 
             
-            self.right_frame.bind("<Configure>",self.on_root_resize)
+            # self.Notification_right_frame.bind("<Configure>",self.Refresh_Content)
             self.Refresh_Content()
         except Exception as e:
             print(f"An error occurred during initialization: {e}")
@@ -98,10 +98,10 @@ class Notification:
             self.message_frame.grid(column=0, row=3, padx=5, sticky="nsew")
 
             # Right Side
-            self.right_frame = tk.CTkFrame(self.root, fg_color="lightgreen")
-            self.right_frame.grid(column=1, row=0, sticky="nsew")
-            self.right_frame.grid_columnconfigure(0, weight=1)
-            self.right_frame.grid_rowconfigure(0, weight=1)
+            self.Notification_right_frame = tk.CTkFrame(self.root, fg_color="lightgreen")
+            self.Notification_right_frame.grid(column=1, row=0, sticky="nsew")
+            self.Notification_right_frame.grid_columnconfigure(0, weight=1)
+            self.Notification_right_frame.grid_rowconfigure(0, weight=1)
 
             # Configure grid weight for responsiveness
             self.loading_canvas.rowconfigure(0, weight=1)
@@ -145,7 +145,7 @@ class Notification:
             new_button.configure(command=lambda button=new_button, idx=self.count: self.show_canvas(button, idx))
 
             # Create associated canvas
-            canvas = tk.CTkCanvas(self.right_frame, width=self.screen_width/2, height=self.screen_height)
+            canvas = tk.CTkCanvas(self.Notification_right_frame, width=self.screen_width/2, height=self.screen_height)
             canvas.grid(row=0, column=0, sticky="nsew")
             self.canvases[self.count] = canvas
             canvas.grid_forget()
@@ -156,7 +156,7 @@ class Notification:
             self.messages[self.count] = message
             message.grid_forget()
 
-            delete_button = tk.CTkButton(self.right_frame, text="Delete", command=lambda idx=self.count: self.delete_item(idx))
+            delete_button = tk.CTkButton(self.Notification_right_frame, text="Delete", command=lambda idx=self.count: self.delete_item(idx))
             delete_button.grid(row=1, column=0, sticky="se")
             delete_button.grid_forget()  # Hide initially
             self.delete_buttons[self.count] = delete_button
@@ -214,7 +214,7 @@ class Notification:
                 else:
                     message.grid_forget()
 
-            self.on_root_resize()
+            
             self.pulsate_shape()
         except Exception as e:
             print(f"An error occurred while showing canvas: {e}")
@@ -484,11 +484,12 @@ class Notification:
             # Handle this error as needed
 
 
-    def Refresh_Content(self):
+    def Refresh_Content(self,event=None):
         try:
             self.delete_all_items()
             self.Search_Pending_Case()
             self.reorganize_buttons()
+            self.on_root_resize()
         except Exception as e:
             print(f"An error occurred while refreshing content: {e}")
             # Handle this error as needed

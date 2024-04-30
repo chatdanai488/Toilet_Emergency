@@ -1,58 +1,56 @@
 #include <WiFi.h>
+#include <WiFiClient.h>
 
-const char* ssid = "TCUST-FREE";     // Enter your Wi-Fi SSID
-//const char* psw = "1234567890"; 
-int LEDpin = 12;
-
+const char* ssid = "TCUST-FREE";
+//const char* password = "YOUR_WIFI_PASSWORD";
+const char* host = "172.16.201.50";
+const int port = 1234; // Choose any available port
 const int buttonPin = 17;  // the number of the pushbutton pin
 const int ledPin = 25;    // the number of the LED pin
 
 // variables will change:
 int buttonState = 0; 
+int count = 0;
+
+WiFiClient client;
 
 void setup() {
-  Serial.begin(115200); // Initialize serial communication for debugging
-  pinMode(LEDpin,OUTPUT);
+Serial.begin(115200);
+pinMode(ledPin, OUTPUT);
 
+pinMode(buttonPin, INPUT);
+delay(100);
 
-
-  pinMode(ledPin, OUTPUT);
-  // initialize the pushbutton pin as an input:
-  pinMode(buttonPin, INPUT);
-  // Connect to Wi-Fi network with SSID
-  Serial.printf("Connecting to %s ", ssid);
-  WiFi.begin(ssid);
-
-  // Wait for Wi-Fi connection
-  while (WiFi.status() != WL_CONNECTED) {
-    digitalWrite(LEDpin,LOW);
-    delay(500);
-    Serial.println(".");
-    digitalWrite(LEDpin,HIGH);
-    delay(500);
-  }
-  Serial.println(" connected!");
-  digitalWrite(LEDpin,HIGH);
-
-  // Print ESP32's IP address
-  Serial.print("IP Address: ");
-  Serial.println(WiFi.localIP());
-  Serial.print("SSID: ");
-  Serial.println(WiFi.SSID());
-  Serial.println("STOP");
-
+WiFi.begin(ssid);
+while (WiFi.status() != WL_CONNECTED) {
+    delay(1000);
+}
+Serial.println("WiFi connected");
 }
 
 void loop() {
-  // Your code here
-  buttonState = digitalRead(buttonPin);
+buttonState = digitalRead(buttonPin);
+if (!client.connected()) {
+    connectToServer();
+}
 
-  // check if the pushbutton is pressed. If it is, the buttonState is HIGH:
-  if (buttonState == HIGH) {
-    // turn LED on:
+if (buttonState == HIGH) {
+    if (client.connected()) {
+    client.print("B105 img\20240321_135959.jpg");
     digitalWrite(ledPin, HIGH);
-  } else {
-    // turn LED off:
+    delay(200);
+    }
+}else{
     digitalWrite(ledPin, LOW);
-  }
+    delay(200);
+    }
+}
+
+void connectToServer() {
+while (!client.connect(host, port)) {
+    Serial.println("Connection failed, retrying...");
+    Serial.println("STOP");
+    delay(1000);
+}
+Serial.println("Connected to server");
 }

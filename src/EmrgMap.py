@@ -48,10 +48,14 @@ class EmrgMap:
         self.nextpage_button = tk.CTkButton(
             button_frame, text="Next Page", command=self.go_to_nextpage)
         self.nextpage_button.grid(row=0, column=3, padx=10, pady=10)
+
+        self.compiler_button = tk.CTkButton(
+            button_frame, text="Compiler", command=self.go_to_compiler)
+        self.compiler_button.grid(row=0, column=4, padx=10, pady=10)
         
 
         close_window = tk.CTkButton(
-            button_frame, text="關閉", fg_color="red", command=self.return_button).grid(row=0, column="4")
+            button_frame, text="關閉", fg_color="red", command=self.return_button).grid(row=0, column="5")
 
         # Map data table
         style = ttk.Style()
@@ -300,15 +304,20 @@ class EmrgMap:
     def go_to_nextpage(self):
         self.master_app.show_frames('EmrgFloor',self.map_value[2])
 
+    def go_to_compiler(self):
+        self.master_app.show_frames('EmrgCompiler',self.map_value[2])
+
     def hide_button(self):
         self.nextpage_button.grid_forget()
         self.edit_button.grid_forget()
         self.delete_button.grid_forget()
+        self.compiler_button.grid_forget()
     
     def show_hidden_button(self):
         self.edit_button.grid(row=0, column=2, padx=10, pady=10)
         self.nextpage_button.grid(row=0, column=3, padx=10, pady=10)
         self.delete_button.grid(row=0, column=1, padx=10, pady=10)
+        self.compiler_button.grid(row=0, column=4, padx=10, pady=10)
 
 
 def main():

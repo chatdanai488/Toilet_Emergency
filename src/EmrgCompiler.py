@@ -8,14 +8,16 @@ from PIL import Image, ImageTk
 from tkinter import colorchooser
 import inspect
 import DB
+from update import InoFileEditor
+from uploadesp32 import ArduinoSketchUploader
 
-class EmrgFloor:
+class EmrgCompiler:
     def __init__(self, root, master_app=None):
         self.root = root
         self.master_app = master_app
         screen_height, screen_width = self.root.winfo_screenheight(), self.root.winfo_screenwidth()
-        self.root.title("My New Project")
-        self.root.geometry(f'{screen_height}x{screen_width}+0+0')
+        # self.root.title("My New Project")
+        # self.root.geometry(f'{screen_height}x{screen_width}+0+0')
         self.root.update()
         self.DBO = DB.DB()
 
@@ -27,15 +29,17 @@ class EmrgFloor:
         self.original_image_height = None
         self.selected_dot_color = "red"
         self.active_edit_shape = None
-        self.map_image = "img\\20240321_135959.jpg" #None
+        self.map_image = None
+
+        # self.uploader = ArduinoSketchUploader()
 
         self.shape_data = {}
 
-        self.create_default_display() 
+        self.create_emrgCompiler_display() 
         if self.map_image: 
             self.add_image()
 
-        self.default_display.bind("<Configure>",self.on_root_resize)
+        self.emrgCompiler_display.bind("<Configure>",self.on_root_resize)
         self.top_widget.bind("<Configure>",self.on_root_resize)
 
 
@@ -53,7 +57,7 @@ class EmrgFloor:
     # Other methods...
     def add_image(self):
         try:
-            available_width = self.root.winfo_width() - self.default_display.winfo_reqwidth()
+            available_width = self.root.winfo_width() - self.emrgCompiler_display.winfo_reqwidth()
             available_height = self.root.winfo_height() - self.top_widget.winfo_reqheight()  # Adjusted for the top widget
 
             # Load the image
@@ -100,7 +104,7 @@ class EmrgFloor:
     def resize_canvas(self):
         try:
             # Get the current dimensions of the canvas
-            canvas_width = self.root.winfo_width() - self.default_display.winfo_reqwidth()
+            canvas_width = self.root.winfo_width() - self.emrgCompiler_display.winfo_reqwidth()
             canvas_height = self.root.winfo_height() - self.top_widget.winfo_reqheight()
 
             # Resize the canvas
@@ -143,11 +147,11 @@ class EmrgFloor:
             method_name = inspect.currentframe().f_code.co_name
             print(f"An error occurred in {method_name}: {e}")
 
-    def create_default_display(self):
+    def create_emrgCompiler_display(self):
         try:
             # Create default display frame
-            self.default_display = tk.CTkFrame(self.root, fg_color="lightgreen", width=200)
-            self.default_display.grid(row=0, column=1, rowspan=3, sticky="nsew")
+            self.emrgCompiler_display = tk.CTkFrame(self.root, fg_color="lightgreen", width=200)
+            self.emrgCompiler_display.grid(row=0, column=1, rowspan=3, sticky="nsew")
 
             # Create top widget frame
             self.top_widget = tk.CTkFrame(self.root, fg_color="green", height=1)
@@ -167,11 +171,11 @@ class EmrgFloor:
             
     def add_return_button(self):
         # Add return button to the default display
-        return_button = tk.CTkButton(self.default_display, text="Return", command=self.return_button)
+        return_button = tk.CTkButton(self.emrgCompiler_display, text="Return", command=self.return_button)
         return_button.grid(row=0, column=0, padx=10, pady=2)
     def add_compiler_button(self):
         # Add add location button to the default display
-        self.compiler_button = tk.CTkButton(self.default_display, text="Add Compiler", command=self.Compile_Arduino)
+        self.compiler_button = tk.CTkButton(self.emrgCompiler_display, text="Add Compiler", command=self.Compile_Arduino)
         self.compiler_button.grid(row=1, column=0, padx=10, pady=2)
         self.compiler_button.grid_forget()
     
@@ -181,37 +185,37 @@ class EmrgFloor:
             style.configure("Treeview", font=("Helvetica", 12))  # Adjust the font size here
             style.configure("Treeview.Heading", font=("Helvetica", 12))
             # Create treeview widget
-            self.table = ttk.Treeview(self.default_display, columns=("Location Name", "Camera IP"), show="headings", style="Treeview")
+            self.CompilerTable = ttk.Treeview(self.emrgCompiler_display, columns=("Location Name", "Camera IP"), show="headings", style="Treeview")
 
             # Define headings
-            self.table.heading("Location Name", text="Location Name")
-            self.table.heading("Camera IP", text="Camera IP")
+            self.CompilerTable.heading("Location Name", text="Location Name")
+            self.CompilerTable.heading("Camera IP", text="Camera IP")
 
             # Set column widths
-            self.table.column("Location Name", width=150)
-            self.table.column("Camera IP", width=150)
+            self.CompilerTable.column("Location Name", width=150)
+            self.CompilerTable.column("Camera IP", width=150)
             # Create vertical scrollbar
-            v_scrollbar = ttk.Scrollbar(self.default_display, orient="vertical", command=self.table.yview)
-            self.table.configure(yscrollcommand=v_scrollbar.set)
+            v_scrollbar = ttk.Scrollbar(self.emrgCompiler_display, orient="vertical", command=self.CompilerTable.yview)
+            self.CompilerTable.configure(yscrollcommand=v_scrollbar.set)
 
             # Attach the scrollbar and the table using grid
-            self.table.grid(row=4, column=0, columnspan=2, sticky="nsew")
+            self.CompilerTable.grid(row=4, column=0, columnspan=2, sticky="nsew")
 
             # Configure row and column weights for proper resizing
-            self.default_display.grid_rowconfigure(4, weight=1)
-            self.default_display.grid_columnconfigure(0, weight=1)
+            self.emrgCompiler_display.grid_rowconfigure(4, weight=1)
+            self.emrgCompiler_display.grid_columnconfigure(0, weight=1)
 
             # Callback to handle scrollbar visibility
             def check_scrollbar_visibility(event=None):
-                if len(self.table.get_children()) > 15:  # Adjust threshold as needed
+                if len(self.CompilerTable.get_children()) > 15:  # Adjust threshold as needed
                     v_scrollbar.grid(row=3, column=2, sticky="ns")
                 else:
                     v_scrollbar.grid_forget()
 
             # Bind the callback to configure event
-            self.table.bind("<Configure>", check_scrollbar_visibility)
-            #self.table.bind("<<TreeviewSelect>>", self.on_row_select)
-            self.table.bind("<Button-1>", self.on_row_select)
+            self.CompilerTable.bind("<Configure>", check_scrollbar_visibility)
+            #self.CompilerTable.bind("<<TreeviewSelect>>", self.on_row_select)
+            self.CompilerTable.bind("<Button-1>", self.on_row_select)
             
             # Initial check for scrollbar visibility
             check_scrollbar_visibility()
@@ -401,7 +405,7 @@ class EmrgFloor:
 
         for row in data:
             # Insert data into the table
-            self.table.insert('', "end", values=(row[2], row[3]))
+            self.CompilerTable.insert('', "end", values=(row[2], row[3]))
 
             # Create shape
             shape_id = None
@@ -425,7 +429,7 @@ class EmrgFloor:
         # Now shape_data dictionary contains all the data grouped by the location name
     def delete_table(self):
         # Delete all items from the Treeview widget
-        self.table.delete(*self.table.get_children())
+        self.CompilerTable.delete(*self.CompilerTable.get_children())
 
         # Delete all shapes on the canvas and clear shape_data dictionary
         for location_data in self.shape_data.values():
@@ -443,10 +447,10 @@ class EmrgFloor:
         
 
     def on_row_select(self, event):
-        selected_item = self.table.selection()
+        selected_item = self.CompilerTable.selection()
         if selected_item:
             
-            item_data = self.table.item(selected_item)
+            item_data = self.CompilerTable.item(selected_item)
 
             self.edit_location_name = item_data['values'][0]
             self.refresh_table()
@@ -506,12 +510,26 @@ class EmrgFloor:
                 print(self.location_and_map)
 
     def Compile_Arduino(self):
+        # file_path = "sketch_test1\sketch_test1.ino"
+        
+        ino_editor = InoFileEditor()
+        # data = ino_editor.update_code(wifi_name, mycom_ip, my_port)
+        data = ino_editor.auto_update(self.location_and_map)
+        ino_editor.write_code(data)
         print(self.location_and_map)
 
+        
+        if self.uploader.compile_sketch():
+            if self.uploader.upload_sketch():
+                # uploader.communicate_serial()
+                print("ok")
+
+
+        
 
 def main():
     root = tk.CTk()
-    app = EmrgFloor(root)
+    app = EmrgCompiler(root)
     root.rowconfigure(0, weight=1)
     root.columnconfigure(2,weight=1)
     root.mainloop()
