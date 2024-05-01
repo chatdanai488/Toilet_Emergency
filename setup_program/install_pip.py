@@ -6,7 +6,7 @@ def install(package):
 
 
 pip_list = ["importlib", "subprocess", "zipfile",
-            "serial", "socket", "customtkinter", "tkinter", "pillow", ""]
+            "serial", "socket", "customtkinter", "tkinter", "pillow", "pygame", "linebot"]
 
 for i in pip_list:
     try:

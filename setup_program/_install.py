@@ -40,7 +40,7 @@ def install(package):
 
 # -----------------------------------------------------------------------
 # Example usage:
-directory_to_search = "already_extract"
+directory_to_search = "setup_program\\already_extract"
 exe_files = find_exe_files(directory_to_search)
 
 for exe_file in exe_files:
