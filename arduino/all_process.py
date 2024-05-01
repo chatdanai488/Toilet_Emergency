@@ -5,7 +5,7 @@ from get_port import get_serial_ports
 
 def update():
 
-    file_path = "arduino\sketch_test1\sketch_test1.ino"
+    file_path = "arduino\\sketch_test1\\sketch_test1.ino"
     wifi_name = "TCUST-FREE"
     mycom_ip = "172.16.204.48"
     my_port = 1234
@@ -20,7 +20,7 @@ def update():
 
 def upload():
     # use folder path
-    sketch_path = "arduino\sketch_test1"
+    sketch_path = "arduino\\sketch_test1"
 
     arduino_port = get_serial_ports()
 
