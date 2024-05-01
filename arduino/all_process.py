@@ -23,13 +23,14 @@ def upload():
     sketch_path = "arduino\\sketch_test1"
 
     arduino_port = get_serial_ports()
-
+    print(arduino_port)
     uploader = ArduinoSketchUploader(sketch_path, arduino_port[0])
     if uploader.compile_sketch():
         if uploader.upload_sketch():
             # uploader.communicate_serial()
             # print("ok")
             pass
+# Example usage:
 
 
 update()
