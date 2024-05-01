@@ -43,8 +43,13 @@ class Setup():
 
 setup = Setup()
 setup.get_file_names_in_folder("set_up_files")
-setup.create_folder()
-setup.extract_zip()
+
+
+if not os.listdir("already_extract"):
+    setup.create_folder()
+    setup.extract_zip()
+else:
+    print("already have")
 
 # Example usage
 # folder_path = 'set_up_files'
