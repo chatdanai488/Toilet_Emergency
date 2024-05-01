@@ -1,7 +1,4 @@
-import importlib.util
 import pip
-import subprocess
-import glob
 import sys
 import os
 sys.stdout.reconfigure(encoding="utf-8")
@@ -11,53 +8,57 @@ sys.stdin.reconfigure(encoding="utf-8")
 # Replace 'your_program.exe' with the path to your executable file
 # os.system("\"_install.py\"")
 
-exe_path = []
+class install_files:
 
+    def find_exe_files(self, directory):
+        exe_files = []
+        for root, dirs, files in os.walk(directory):
+            for file in files:
+                if file.endswith(".exe"):
+                    exe_files.append(os.path.join(root, file))
+                if file.endswith(".EXE"):
+                    exe_files.append(os.path.join(root, file))
+        return exe_files
 
-def find_exe_files(directory):
-    exe_files = []
-    for root, dirs, files in os.walk(directory):
-        for file in files:
-            if file.endswith(".exe"):
-                exe_files.append(os.path.join(root, file))
-            if file.endswith(".EXE"):
-                exe_files.append(os.path.join(root, file))
-    return exe_files
+    def search_files(self, directory, filename):
+        found_files = []
+        for root, dirs, files in os.walk(directory):
+            for file in files:
+                if filename in file:
+                    found_files.append(os.path.join(root, file))
+        return found_files
 
-
-def search_files(directory, filename):
-    found_files = []
-    for root, dirs, files in os.walk(directory):
-        for file in files:
-            if filename in file:
-                found_files.append(os.path.join(root, file))
-    return found_files
-
-
-def install(package):
-    pip.main(['install', package])
+    def install(self, package):
+        pip.main(['install', package])
 
 
 # -----------------------------------------------------------------------
 # download programe
 # Example usage:
-directory_to_search = "setup_program\\already_extract"
-exe_files = find_exe_files(directory_to_search)
+# exe_path = []
+# ins_files = install_files()
+# directory_to_search = "setup_program\\already_extract"
+# exe_files = ins_files.find_exe_files(directory_to_search)
 
-for exe_file in exe_files:
-    print(exe_file)
-    exe_path.append(exe_file)
+# for exe_file in exe_files:
+#     print(exe_file)
+#     exe_path.append(exe_file)
 
-for i in exe_path:
-    try:
-        os.system(i)
-    except KeyError as e:
-        print(e)
+# for i in exe_path:
+#     try:
+#         os.system(i)
+#     except KeyError as e:
+#         print(e)
 
-# download wemos d1 r32 core
-os.system("arduino-cli core install esp32:esp32")
-sys.path.append(
-    "setup_program\\already_extract\\arduino-cli_0.35.3_Windows_64bit")
+# # download wemos d1 r32 core
+# try:
+#     os.system("arduino-cli core install esp32:esp32")
+# except Exception as e:
+#     print(e)
+
+
+# sys.path.append(
+#     "setup_program\\already_extract\\arduino-cli_0.35.3_Windows_64bit")
 # ---------------------------------------------
 
 # package_name = "esptool"

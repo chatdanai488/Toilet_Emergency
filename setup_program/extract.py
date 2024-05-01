@@ -1,17 +1,18 @@
 import zipfile
 import os
 
-os.makedirs("setup_program\\already_extract", exist_ok=True)
-
 
 class Setup():
     def __init__(self) -> None:
-
+        self.create_extract()
         self.files_name = []
         self.files_zip = []
         self.extract_folder = 'setup_program/already_extract/'
         self.zip_folder = 'setup_program/set_up_files/'
         self.extract_path = []
+
+    def create_extract(self):
+        os.makedirs("setup_program\\already_extract", exist_ok=True)
 
     def extract_zip(self):
         count = 0
@@ -44,16 +45,7 @@ class Setup():
         print(self.files_zip)
 
 
-setup = Setup()
-setup.create_folder()
-setup.get_file_names_in_folder("setup_program\set_up_files")
 
-
-if not os.listdir("setup_program\\already_extract"):
-    setup.create_folder()
-    setup.extract_zip()
-else:
-    print("already have")
 
 # Example usage
 # folder_path = 'set_up_files'
