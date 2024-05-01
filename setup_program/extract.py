@@ -6,8 +6,8 @@ class Setup():
     def __init__(self) -> None:
         self.files_name = []
         self.files_zip = []
-        self.extract_folder = 'already_extract/'
-        self.zip_folder = 'set_up_files/'
+        self.extract_folder = 'setup_program/already_extract/'
+        self.zip_folder = 'setup_program/set_up_files/'
         self.extract_path = []
 
     def extract_zip(self):
@@ -42,10 +42,10 @@ class Setup():
 
 
 setup = Setup()
-setup.get_file_names_in_folder("set_up_files")
+setup.get_file_names_in_folder("setup_program\set_up_files")
 
 
-if not os.listdir("already_extract"):
+if not os.listdir("setup_program\\already_extract"):
     setup.create_folder()
     setup.extract_zip()
 else:
