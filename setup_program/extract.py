@@ -1,9 +1,12 @@
 import zipfile
 import os
 
+os.makedirs("setup_program\\already_extract", exist_ok=True)
+
 
 class Setup():
     def __init__(self) -> None:
+
         self.files_name = []
         self.files_zip = []
         self.extract_folder = 'setup_program/already_extract/'
@@ -42,6 +45,7 @@ class Setup():
 
 
 setup = Setup()
+setup.create_folder()
 setup.get_file_names_in_folder("setup_program\set_up_files")
 
 
