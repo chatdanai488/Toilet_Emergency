@@ -42,6 +42,9 @@ try:
 except Exception as e:
     print(e)
 
-
-sys.path.append(
-    "setup_program\\already_extract\\arduino-cli_0.35.3_Windows_64bit")
+try:
+    file_cli = ins_files.find_folder()
+    # New path to add
+    ins_files.add_path_to_env(file_cli)
+except Exception as e:
+    print(e)

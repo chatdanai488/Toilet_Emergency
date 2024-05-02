@@ -31,7 +31,28 @@ class install_files:
     def install(self, package):
         pip.main(['install', package])
 
+    def find_folder(self, folder_name="arduino-cli_0.35.3_Windows_64bit"):
 
+        # Get the current working directory
+        current_directory = os.getcwd()
+
+        # Construct the path of the folder
+        folder_path = os.path.join(current_directory, folder_name)
+
+        # Get the absolute path of the folder
+        absolute_folder_path = os.path.abspath(folder_path)
+
+        return absolute_folder_path.capitalize()
+
+    def add_path_to_env(self, new_path):
+        # Get the current value of the PATH environment variable
+        current_path = os.environ.get('PATH')
+
+        # Append the new path to the current value of PATH, separated by the appropriate delimiter
+        new_path_value = current_path + new_path + os.pathsep
+
+        # Set the updated PATH environment variable
+        os.environ['PATH'] = new_path_value
 # -----------------------------------------------------------------------
 # download programe
 # Example usage:
