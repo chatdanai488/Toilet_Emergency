@@ -3,7 +3,7 @@
 
 const char* ssid = "TCUST-FREE";
 //const char* password = "YOUR_WIFI_PASSWORD";
-const char* host = "172.16.201.50";
+const char* host = "172.16.204.48";
 const int port = 1234; // Choose any available port
 const int buttonPin = 17;  // the number of the pushbutton pin
 const int ledPin = 25;    // the number of the LED pin
@@ -36,7 +36,7 @@ if (!client.connected()) {
 
 if (buttonState == HIGH) {
     if (client.connected()) {
-    client.print("B105 img\20240321_135959.jpg");
+    client.print("111 img\20240504_174907.jpg");
     digitalWrite(ledPin, HIGH);
     delay(200);
     }

@@ -10,7 +10,7 @@ pip = install_pip_()
 # extract files
 setup = Setup()
 setup.create_folder()
-setup.get_file_names_in_folder("setup_program\set_up_files")
+setup.get_file_names_in_folder("setup_program\\set_up_files")
 
 
 if not os.listdir("setup_program\\already_extract"):

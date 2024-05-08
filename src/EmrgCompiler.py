@@ -10,12 +10,16 @@ import inspect
 import DB
 from update import InoFileEditor
 from uploadesp32 import ArduinoSketchUploader
+from get_port import get_serial_ports
+import logging
+
 
 class EmrgCompiler:
     def __init__(self, root, master_app=None):
         self.root = root
         self.master_app = master_app
-        screen_height, screen_width = self.root.winfo_screenheight(), self.root.winfo_screenwidth()
+        screen_height, screen_width = self.root.winfo_screenheight(
+        ), self.root.winfo_screenwidth()
         # self.root.title("My New Project")
         # self.root.geometry(f'{screen_height}x{screen_width}+0+0')
         self.root.update()
@@ -31,17 +35,18 @@ class EmrgCompiler:
         self.active_edit_shape = None
         self.map_image = None
 
-        # self.uploader = ArduinoSketchUploader()
+        self.uploader = ArduinoSketchUploader()
 
         self.shape_data = {}
 
-        self.create_emrgCompiler_display() 
-        if self.map_image: 
+        self.create_emrgCompiler_display()
+        if self.map_image:
             self.add_image()
 
-        self.emrgCompiler_display.bind("<Configure>",self.on_root_resize)
-        self.top_widget.bind("<Configure>",self.on_root_resize)
-
+        self.emrgCompiler_display.bind("<Configure>", self.on_root_resize)
+        self.top_widget.bind("<Configure>", self.on_root_resize)
+        logging.basicConfig(filename='example.log', level=logging.INFO,
+                            format='%(asctime)s - %(levelname)s - %(message)s')
 
     def on_root_resize(self, event=None):
         try:
@@ -53,12 +58,16 @@ class EmrgCompiler:
             # Add error handling to catch any exceptions
             method_name = inspect.currentframe().f_code.co_name
             print(f"An error occurred in {method_name}: {e}")
-            
+            logging.error(e)
+
     # Other methods...
     def add_image(self):
         try:
-            available_width = self.root.winfo_width() - self.emrgCompiler_display.winfo_reqwidth()
-            available_height = self.root.winfo_height() - self.top_widget.winfo_reqheight()  # Adjusted for the top widget
+            available_width = self.root.winfo_width(
+            ) - self.emrgCompiler_display.winfo_reqwidth()
+            available_height = self.root.winfo_height(
+                # Adjusted for the top widget
+            ) - self.top_widget.winfo_reqheight()
 
             # Load the image
             image_path = self.map_image  # Use forward slashes for paths
@@ -87,11 +96,15 @@ class EmrgCompiler:
             # Convert image for Tkinter
             self.image = ImageTk.PhotoImage(resized_image)
             if not hasattr(self, 'image_canvas'):
-                self.image_canvas = tk.CTkCanvas(self.root, width=new_width, height=new_height, borderwidth=0, highlightthickness=0)
-            self.image_id = self.image_canvas.create_image(0, 0, anchor="nw", image=self.image)
-            self.image_canvas.grid(row=1, column=2, padx=0, pady=0, sticky="nw")
+                self.image_canvas = tk.CTkCanvas(
+                    self.root, width=new_width, height=new_height, borderwidth=0, highlightthickness=0)
+            self.image_id = self.image_canvas.create_image(
+                0, 0, anchor="nw", image=self.image)
+            self.image_canvas.grid(
+                row=1, column=2, padx=0, pady=0, sticky="nw")
 
-            self.image_canvas.configure(scrollregion=(0, 0, new_width, new_height))
+            self.image_canvas.configure(
+                scrollregion=(0, 0, new_width, new_height))
 
             self.original_image_size = (image_width, image_height)
 
@@ -101,6 +114,8 @@ class EmrgCompiler:
             # Add error handling to catch any exceptions
             method_name = inspect.currentframe().f_code.co_name
             print(f"An error occurred in {method_name}: {e}")
+            logging.error(e)
+
     def resize_canvas(self):
         try:
             # Get the current dimensions of the canvas
@@ -108,7 +123,8 @@ class EmrgCompiler:
             canvas_height = self.root.winfo_height() - self.top_widget.winfo_reqheight()
 
             # Resize the canvas
-            self.image_canvas.configure(width=canvas_width, height=canvas_height)
+            self.image_canvas.configure(
+                width=canvas_width, height=canvas_height)
 
             # Resize the image if it exists
             if hasattr(self, 'image'):
@@ -130,7 +146,8 @@ class EmrgCompiler:
                     new_width = int(canvas_height * aspect_ratio)
 
                 # Resize the image
-                resized_image = self.original_image.resize((new_width, new_height))
+                resized_image = self.original_image.resize(
+                    (new_width, new_height))
 
                 # Update the image in the canvas
                 self.image = ImageTk.PhotoImage(resized_image)
@@ -146,16 +163,21 @@ class EmrgCompiler:
             # Add error handling to catch any exceptions
             method_name = inspect.currentframe().f_code.co_name
             print(f"An error occurred in {method_name}: {e}")
+            logging.error(e)
 
     def create_emrgCompiler_display(self):
         try:
             # Create default display frame
-            self.emrgCompiler_display = tk.CTkFrame(self.root, fg_color="lightgreen", width=200)
-            self.emrgCompiler_display.grid(row=0, column=1, rowspan=3, sticky="nsew")
+            self.emrgCompiler_display = tk.CTkFrame(
+                self.root, fg_color="lightgreen", width=200)
+            self.emrgCompiler_display.grid(
+                row=0, column=1, rowspan=3, sticky="nsew")
 
             # Create top widget frame
-            self.top_widget = tk.CTkFrame(self.root, fg_color="green", height=1)
-            self.top_widget.grid(row=0, column=2, columnspan=999, sticky="nsew")
+            self.top_widget = tk.CTkFrame(
+                self.root, fg_color="green", height=1)
+            self.top_widget.grid(
+                row=0, column=2, columnspan=999, sticky="nsew")
             self.top_widget.grid_columnconfigure(0, weight=1)
 
             # Add buttons to the default display
@@ -167,25 +189,30 @@ class EmrgCompiler:
             # Add error handling to catch any exceptions
             method_name = inspect.currentframe().f_code.co_name
             print(f"An error occurred in {method_name}: {e}")
+            logging.error(e)
 
-            
     def add_return_button(self):
         # Add return button to the default display
-        return_button = tk.CTkButton(self.emrgCompiler_display, text="Return", command=self.return_button)
+        return_button = tk.CTkButton(
+            self.emrgCompiler_display, text="Return", command=self.return_button)
         return_button.grid(row=0, column=0, padx=10, pady=2)
+
     def add_compiler_button(self):
         # Add add location button to the default display
-        self.compiler_button = tk.CTkButton(self.emrgCompiler_display, text="Add Compiler", command=self.Compile_Arduino)
+        self.compiler_button = tk.CTkButton(
+            self.emrgCompiler_display, text="Add Compiler", command=self.Compile_Arduino)
         self.compiler_button.grid(row=1, column=0, padx=10, pady=2)
         self.compiler_button.grid_forget()
-    
+
     def create_table(self):
         try:
             style = ttk.Style()
-            style.configure("Treeview", font=("Helvetica", 12))  # Adjust the font size here
+            # Adjust the font size here
+            style.configure("Treeview", font=("Helvetica", 12))
             style.configure("Treeview.Heading", font=("Helvetica", 12))
             # Create treeview widget
-            self.CompilerTable = ttk.Treeview(self.emrgCompiler_display, columns=("Location Name", "Camera IP"), show="headings", style="Treeview")
+            self.CompilerTable = ttk.Treeview(self.emrgCompiler_display, columns=(
+                "Location Name", "Camera IP"), show="headings", style="Treeview")
 
             # Define headings
             self.CompilerTable.heading("Location Name", text="Location Name")
@@ -195,11 +222,13 @@ class EmrgCompiler:
             self.CompilerTable.column("Location Name", width=150)
             self.CompilerTable.column("Camera IP", width=150)
             # Create vertical scrollbar
-            v_scrollbar = ttk.Scrollbar(self.emrgCompiler_display, orient="vertical", command=self.CompilerTable.yview)
+            v_scrollbar = ttk.Scrollbar(
+                self.emrgCompiler_display, orient="vertical", command=self.CompilerTable.yview)
             self.CompilerTable.configure(yscrollcommand=v_scrollbar.set)
 
             # Attach the scrollbar and the table using grid
-            self.CompilerTable.grid(row=4, column=0, columnspan=2, sticky="nsew")
+            self.CompilerTable.grid(
+                row=4, column=0, columnspan=2, sticky="nsew")
 
             # Configure row and column weights for proper resizing
             self.emrgCompiler_display.grid_rowconfigure(4, weight=1)
@@ -214,9 +243,9 @@ class EmrgCompiler:
 
             # Bind the callback to configure event
             self.CompilerTable.bind("<Configure>", check_scrollbar_visibility)
-            #self.CompilerTable.bind("<<TreeviewSelect>>", self.on_row_select)
+            # self.CompilerTable.bind("<<TreeviewSelect>>", self.on_row_select)
             self.CompilerTable.bind("<Button-1>", self.on_row_select)
-            
+
             # Initial check for scrollbar visibility
             check_scrollbar_visibility()
 
@@ -224,12 +253,9 @@ class EmrgCompiler:
             # Handle any errors during table creation
             method_name = inspect.currentframe().f_code.co_name
             print(f"An error occurred in {method_name}: {e}")
+            logging.error(e)
             # Optionally, raise the error to propagate it further
             raise
-
-    
-    
-
 
     def clear(self):
         try:
@@ -253,12 +279,12 @@ class EmrgCompiler:
                 self.image_canvas.delete(self.active_square[0])
                 self.active_square = None
 
-            
             self.dot_locations_history = {"dot": [], "line": [], "square": []}
             self.history_pointer = {"dot": -1, "line": -1, "square": -1}
         except Exception as e:
             # Handle any errors during clearing
             print(f"An error occurred in {method_name}: {e}")
+            logging.error(e)
             # Optionally, raise the error to propagate it further
             raise
 
@@ -269,17 +295,21 @@ class EmrgCompiler:
             if self.active_dot:
                 dot_id, _, _ = self.active_dot
                 # Update the fill color of the active dot with the selected color
-                self.image_canvas.itemconfig(dot_id, fill=self.selected_dot_color)
+                self.image_canvas.itemconfig(
+                    dot_id, fill=self.selected_dot_color)
             elif self.active_line:
-                self.image_canvas.itemconfig(self.active_line[0], fill=self.selected_dot_color)
+                self.image_canvas.itemconfig(
+                    self.active_line[0], fill=self.selected_dot_color)
             elif self.active_square:
-                self.image_canvas.itemconfig(self.active_square[0], fill=self.selected_dot_color)
+                self.image_canvas.itemconfig(
+                    self.active_square[0], fill=self.selected_dot_color)
         except Exception as e:
             # Handle any errors during dot recoloring
             print(f"An error occurred in {method_name}: {e}")
+            logging.error(e)
             # Optionally, raise the error to propagate it further
             raise
-    
+
     def resize_dot_position(self):
         try:
             method_name = inspect.currentframe().f_code.co_name
@@ -296,7 +326,8 @@ class EmrgCompiler:
                 new_y = relative_y * image_height
 
                 # Update the coordinates of the dot on the canvas
-                self.image_canvas.coords(dot_id, new_x - 2, new_y - 2, new_x + 2, new_y + 2)
+                self.image_canvas.coords(
+                    dot_id, new_x - 2, new_y - 2, new_x + 2, new_y + 2)
 
             # Update the stored image dimensions for the next resize event
             self.image_width = image_width
@@ -304,15 +335,15 @@ class EmrgCompiler:
         except Exception as e:
             # Handle any errors during dot resizing
             print(f"An error occurred in {method_name}: {e}")
+            logging.error(e)
             # Optionally, raise the error to propagate it further
             raise
-
 
     def resize_line_position(self):
         try:
             method_name = inspect.currentframe().f_code.co_name
             line_history = self.dot_locations_history["line"]
-        
+
             # Check if there's any history to resize
             if self.history_pointer["line"] > 0:
                 # Get the entry to resize
@@ -323,7 +354,8 @@ class EmrgCompiler:
                     # Calculate canvas coordinates based on the relative positions
                     canvas_x = dot_x * self.original_image_width
                     canvas_y = dot_y * self.original_image_height
-                    dot_id = self.image_canvas.create_oval(canvas_x - 2, canvas_y - 2, canvas_x + 2, canvas_y + 2, fill=self.selected_dot_color)
+                    dot_id = self.image_canvas.create_oval(
+                        canvas_x - 2, canvas_y - 2, canvas_x + 2, canvas_y + 2, fill=self.selected_dot_color)
                     self.active_dot = (dot_id, canvas_x, canvas_y)
                     # Remove the current line from the canvas
                     if self.active_line:
@@ -332,9 +364,12 @@ class EmrgCompiler:
                 else:
                     # If the second column is not None, it indicates a line
                     # Calculate canvas coordinates based on the relative positions
-                    x1, y1 = entry[0][0] * self.original_image_width, entry[0][1] * self.original_image_height
-                    x2, y2 = entry[1][0] * self.original_image_width, entry[1][1] * self.original_image_height
-                    line_id = self.image_canvas.create_line(x1, y1, x2, y2, fill=self.selected_dot_color)
+                    x1, y1 = entry[0][0] * self.original_image_width, entry[0][1] * \
+                        self.original_image_height
+                    x2, y2 = entry[1][0] * self.original_image_width, entry[1][1] * \
+                        self.original_image_height
+                    line_id = self.image_canvas.create_line(
+                        x1, y1, x2, y2, fill=self.selected_dot_color)
                     # Remove the last dot from the canvas
                     self.image_canvas.delete(entry[0][0])
                     # Remove the current line from the canvas
@@ -342,17 +377,17 @@ class EmrgCompiler:
                         self.image_canvas.delete(self.active_line[0])
                     # Update the active line
                     self.active_line = (line_id, x1, y1, x2, y2)
-                    
+
                 # Decrement the history pointer
         except Exception as e:
             print(f"An error occurred in {method_name}: {e}")
+            logging.error(e)
             raise
 
-        
     def resize_square_position(self):
         try:
             square_history = self.dot_locations_history["square"]
-            
+
             # Check if there's any history to rollback
             if self.history_pointer["square"] > 0:
                 # Get the entry to resize
@@ -364,7 +399,8 @@ class EmrgCompiler:
                     canvas_x = dot_x * self.original_image_width
                     canvas_y = dot_y * self.original_image_height
                     # Create a dot at the specified position
-                    dot_id = self.image_canvas.create_rectangle(canvas_x - 2, canvas_y - 2, canvas_x + 2, canvas_y + 2, fill=self.selected_dot_color)
+                    dot_id = self.image_canvas.create_rectangle(
+                        canvas_x - 2, canvas_y - 2, canvas_x + 2, canvas_y + 2, fill=self.selected_dot_color)
                     self.active_dot = (dot_id, canvas_x, canvas_y)
                     # Remove the current square from the canvas
                     if self.active_square:
@@ -374,10 +410,13 @@ class EmrgCompiler:
                 else:
                     # If the second column is not None, it indicates a square
                     # Calculate canvas coordinates based on the relative positions
-                    x1, y1 = entry[0][0] * self.original_image_width, entry[0][1] * self.original_image_height
-                    x2, y2 = entry[1][0] * self.original_image_width, entry[1][1] * self.original_image_height
+                    x1, y1 = entry[0][0] * self.original_image_width, entry[0][1] * \
+                        self.original_image_height
+                    x2, y2 = entry[1][0] * self.original_image_width, entry[1][1] * \
+                        self.original_image_height
                     # Create a square at the specified position
-                    square_id = self.image_canvas.create_rectangle(x1, y1, x2, y2, fill=self.selected_dot_color, stipple="gray50")
+                    square_id = self.image_canvas.create_rectangle(
+                        x1, y1, x2, y2, fill=self.selected_dot_color, stipple="gray50")
                     # Remove the last dot from the canvas
                     self.image_canvas.delete(entry[0][0])
                     # Remove the current square from the canvas
@@ -388,6 +427,7 @@ class EmrgCompiler:
         except Exception as e:
             method_name = inspect.currentframe().f_code.co_name
             print(f"An error occurred in {method_name}: {e}")
+            logging.error(e)
 
     def return_button(self):
         if self.master_app:
@@ -396,11 +436,10 @@ class EmrgCompiler:
                 self.map_image = None
             self.clear()
             self.delete_table()
-                
 
             self.master_app.show_frames("EmrgMap")
 
-    def add_table(self,map_path):
+    def add_table(self, map_path):
         data = self.DBO.Fetch_Map(map_path)
 
         for row in data:
@@ -410,20 +449,29 @@ class EmrgCompiler:
             # Create shape
             shape_id = None
             if row[9] == "square":
-                x1, y1 = row[5] * self.original_image_width, row[6] * self.original_image_height
-                x2, y2 = row[7] * self.original_image_width, row[8] * self.original_image_height
-                shape_id = self.image_canvas.create_rectangle(x1, y1, x2, y2, fill=row[11] if row[11] is not None else "black", stipple="gray50")
+                x1, y1 = row[5] * self.original_image_width, row[6] * \
+                    self.original_image_height
+                x2, y2 = row[7] * self.original_image_width, row[8] * \
+                    self.original_image_height
+                shape_id = self.image_canvas.create_rectangle(
+                    x1, y1, x2, y2, fill=row[11] if row[11] is not None else "black", stipple="gray50")
             elif row[9] == "line":
-                x1, y1 = row[5] * self.original_image_width, row[6] * self.original_image_height
-                x2, y2 = row[7] * self.original_image_width, row[8] * self.original_image_height
-                shape_id = self.image_canvas.create_line(x1, y1, x2, y2, fill=row[11] if row[11] is not None else "black")
+                x1, y1 = row[5] * self.original_image_width, row[6] * \
+                    self.original_image_height
+                x2, y2 = row[7] * self.original_image_width, row[8] * \
+                    self.original_image_height
+                shape_id = self.image_canvas.create_line(
+                    x1, y1, x2, y2, fill=row[11] if row[11] is not None else "black")
             elif row[9] == "dot":
-                x1, y1 = row[5] * self.original_image_width, row[6] * self.original_image_height
-                shape_id = self.image_canvas.create_oval(x1-2, y1-2, x1+2, y1+2, fill=row[11] if row[11] is not None else "black")
+                x1, y1 = row[5] * self.original_image_width, row[6] * \
+                    self.original_image_height
+                shape_id = self.image_canvas.create_oval(
+                    x1-2, y1-2, x1+2, y1+2, fill=row[11] if row[11] is not None else "black")
 
             loc_map = row[2] + " " + row[10]
             # Store shape data in shape_data dictionary
-            self.shape_data.setdefault(str(row[2]), []).append({"shape_id": shape_id, "row": row,"loc_map":loc_map})
+            self.shape_data.setdefault(str(row[2]), []).append(
+                {"shape_id": shape_id, "row": row, "loc_map": loc_map})
             print(loc_map.split())
 
         # Now shape_data dictionary contains all the data grouped by the location name
@@ -444,12 +492,11 @@ class EmrgCompiler:
     def refresh_table(self):
         self.delete_table()
         self.add_table(self.map_image)
-        
 
     def on_row_select(self, event):
         selected_item = self.CompilerTable.selection()
         if selected_item:
-            
+
             item_data = self.CompilerTable.item(selected_item)
 
             self.edit_location_name = item_data['values'][0]
@@ -457,7 +504,7 @@ class EmrgCompiler:
             self.highlight_shape(self.edit_location_name)
             self.show_hidden_button()
             self.retrieve_Info(self.edit_location_name)
-        
+
     def show_hidden_button(self):
         self.compiler_button.grid(row=1, column=0, padx=10, pady=2)
 
@@ -470,36 +517,38 @@ class EmrgCompiler:
                 # Retrieve shape ID and row data
                 shape_id = data["shape_id"]
                 # Highlight the shape (you can customize this part based on your needs)
-                self.image_canvas.itemconfig(shape_id, outline="red", width=10)  
-
-
-
-        
-    
-        
-   
+                self.image_canvas.itemconfig(shape_id, outline="red", width=10)
 
     def create_current_active_shape(self):
-        coordinates = [self.edit_shape_data[0][0][0],self.edit_shape_data[0][0][1],self.edit_shape_data[0][1][0],self.edit_shape_data[0][1][1]]
+        coordinates = [self.edit_shape_data[0][0][0], self.edit_shape_data[0]
+                       [0][1], self.edit_shape_data[0][1][0], self.edit_shape_data[0][1][1]]
         print(coordinates)
         if self.edit_shape_data[1] == "square":
-            x1, y1 = coordinates[0] * self.original_image_width, coordinates[1] * self.original_image_height
-            x2, y2 = coordinates[2] * self.original_image_width, coordinates[3] * self.original_image_height
-            self.active_edit_shape = self.image_canvas.create_rectangle(x1, y1, x2, y2, fill=self.edit_shape_data[3] if self.edit_shape_data[3] is not None else "black", stipple="gray50")
+            x1, y1 = coordinates[0] * self.original_image_width, coordinates[1] * \
+                self.original_image_height
+            x2, y2 = coordinates[2] * self.original_image_width, coordinates[3] * \
+                self.original_image_height
+            self.active_edit_shape = self.image_canvas.create_rectangle(
+                x1, y1, x2, y2, fill=self.edit_shape_data[3] if self.edit_shape_data[3] is not None else "black", stipple="gray50")
         elif self.edit_shape_data[1] == "line":
-            x1, y1 = coordinates[0] * self.original_image_width, coordinates[1] * self.original_image_height
-            x2, y2 = coordinates[2] * self.original_image_width, coordinates[3] * self.original_image_height
-            self.active_edit_shape = self.image_canvas.create_line(x1, y1, x2, y2, fill=self.edit_shape_data[3] if self.edit_shape_data[3] is not None else "black")
+            x1, y1 = coordinates[0] * self.original_image_width, coordinates[1] * \
+                self.original_image_height
+            x2, y2 = coordinates[2] * self.original_image_width, coordinates[3] * \
+                self.original_image_height
+            self.active_edit_shape = self.image_canvas.create_line(
+                x1, y1, x2, y2, fill=self.edit_shape_data[3] if self.edit_shape_data[3] is not None else "black")
         elif self.edit_shape_data[1] == "dot":
-            x1, y1 = coordinates[0] * self.original_image_width, coordinates[1] * self.original_image_height
-            self.active_edit_shape = self.image_canvas.create_oval(x1-2, y1-2, x1+2, y1+2, fill=self.edit_shape_data[3] if self.edit_shape_data[3] is not None else "black")
+            x1, y1 = coordinates[0] * self.original_image_width, coordinates[1] * \
+                self.original_image_height
+            self.active_edit_shape = self.image_canvas.create_oval(
+                x1-2, y1-2, x1+2, y1+2, fill=self.edit_shape_data[3] if self.edit_shape_data[3] is not None else "black")
 
-    def receive_value(self,value):
+    def receive_value(self, value):
         self.map_image = value
         self.add_image()
         self.on_root_resize()
 
-    def retrieve_Info(self,value):
+    def retrieve_Info(self, value):
         # Retrieve the data associated with the specified location name
         location_data = self.shape_data.get(str(value))
         if location_data:
@@ -511,28 +560,28 @@ class EmrgCompiler:
 
     def Compile_Arduino(self):
         # file_path = "sketch_test1\sketch_test1.ino"
-        
-        ino_editor = InoFileEditor()
-        # data = ino_editor.update_code(wifi_name, mycom_ip, my_port)
-        data = ino_editor.auto_update(self.location_and_map)
-        ino_editor.write_code(data)
-        print(self.location_and_map)
+        try:
+            ino_editor = InoFileEditor()
+            # data = ino_editor.update_code(wifi_name, mycom_ip, my_port)
+            data = ino_editor.auto_update(self.location_and_map)
+            ino_editor.write_code(data)
+            print(self.location_and_map)
 
-        
-        if self.uploader.compile_sketch():
-            if self.uploader.upload_sketch():
-                # uploader.communicate_serial()
-                print("ok")
+            if self.uploader.compile_sketch():
+                if self.uploader.upload_sketch():
+                    # self.uploader.communicate_serial()
+                    print("ok")
+        except Exception as e:
+            logging.error(e)
 
-
-        
 
 def main():
     root = tk.CTk()
     app = EmrgCompiler(root)
     root.rowconfigure(0, weight=1)
-    root.columnconfigure(2,weight=1)
+    root.columnconfigure(2, weight=1)
     root.mainloop()
-    
+
+
 if __name__ == "__main__":
     main()

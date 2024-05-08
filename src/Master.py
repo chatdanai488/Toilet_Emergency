@@ -10,22 +10,24 @@ import datetime
 import os
 import shutil
 import sys
+import logging
+
 
 class MasterApp:
     def __init__(self, root):
         self.root = root
         self.root.update()
-        screen_height, screen_width = self.root.winfo_screenheight(), self.root.winfo_screenwidth()
+        screen_height, screen_width = self.root.winfo_screenheight(
+        ), self.root.winfo_screenwidth()
         self.root.geometry(f'{screen_width}x{screen_height}+0+0')
         self.root.title("Master Application")
         frame_color = "black"
 
         self.DBO = DB()
         self.AF = AF(master_app=self)
-        
+
         self.active_frame = None
 
-        
         # self.add_to_startup()
 
         # Create frame for EmrgFloor
@@ -52,11 +54,15 @@ class MasterApp:
         self.emrg_floor = EmrgFloor(self.frame_floor, master_app=self)
         self.emrg_map = EmrgMap(self.frame_map, master_app=self)
         self.main = MainApplication(self.frame_main, master_app=self)
-        self.notification = Notification(self.frame_notification, master_app=self)
+        self.notification = Notification(
+            self.frame_notification, master_app=self)
         self.emrg_compiler = EmrgCompiler(self.frame_compiler, master_app=self)
-        
-        self.frames = [self.frame_floor, self.frame_map, self.frame_main, self.frame_notification, self.frame_compiler]
 
+        self.frames = [self.frame_floor, self.frame_map,
+                       self.frame_main, self.frame_notification, self.frame_compiler]
+
+        logging.basicConfig(filename='example.log', level=logging.INFO,
+                            format='%(asctime)s - %(levelname)s - %(message)s')
         # Configure row and column weights for root and frames
         for frame in self.frames:
             self.root.grid_rowconfigure(0, weight=1)
@@ -77,9 +83,8 @@ class MasterApp:
                     frame.grid_remove()
         except Exception as e:
             print("An error occurred while opening frames:", e)
+            logging.error(e)
             # Handle this error as needed
-
-        
 
     def show_frames(self, value, attribute=None):
         try:
@@ -99,13 +104,15 @@ class MasterApp:
         except Exception as e:
             print("An error occurred while showing frames:", e)
             # Handle this error as needed
+            logging.error(e)
 
     def Emergency_Alert_Called(self, Value='B105'):
         try:
             current_datetime = datetime.datetime.now()
             # Format current datetime as YYYYMMDD_HHMMSS
             formatted_datetime = current_datetime.strftime("%Y-%m-%dT%H:%M:%S")
-            formatted_datetime2 = current_datetime.strftime("%Y-%m-%d %H:%M:%S")
+            formatted_datetime2 = current_datetime.strftime(
+                "%Y-%m-%d %H:%M:%S")
 
             check = self.DBO.Active_Emergency_Check()
 
@@ -116,7 +123,8 @@ class MasterApp:
                 Data = [formatted_datetime, Value[0], alert_id, 1]
                 self.DBO.Insert_Alert(Data)
 
-            message = f"""There is an Emergency at: {Value[0]}\nEmergency Occurred at: {formatted_datetime2}\nPlease Go There Immediately"""
+            message = f"""There is an Emergency at: {Value[0]}\nEmergency Occurred at: {
+                formatted_datetime2}\nPlease Go There Immediately"""
             self.AF.Send_Line_Message(message)
             self.AF.Alert_Sound()
             self.AF.show_notification(message)
@@ -131,27 +139,27 @@ class MasterApp:
 
             # button_frame = self.notification.Call_Button_Frame()
             for widget in self.notification.button_Frame.winfo_children():
-                if isinstance(widget,tk.CTkButton) and widget.cget('text') == Value:
-                    button_exist +=1
-            
+                if isinstance(widget, tk.CTkButton) and widget.cget('text') == Value:
+                    button_exist += 1
+
             if button_exist == 0:
                 self.notification.Refresh_Content()
         except Exception as e:
             print("An error occurred during emergency alert:", e)
             # Handle this error as needed
-
-        
-
+            logging.error(e)
 
     def add_to_startup(self):
         try:
             file_path = sys.argv[0]
             file_path = os.path.abspath(file_path)
             # Get the path to the user's Startup folder
-            startup_folder = os.path.join(os.getenv('APPDATA'), 'Microsoft', 'Windows', 'Start Menu', 'Programs', 'Startup')
+            startup_folder = os.path.join(os.getenv(
+                'APPDATA'), 'Microsoft', 'Windows', 'Start Menu', 'Programs', 'Startup')
 
             # Check if the executable has been added to startup before
-            startup_flag_file = os.path.join(startup_folder, "startup_flag.txt")
+            startup_flag_file = os.path.join(
+                startup_folder, "startup_flag.txt")
             if os.path.exists(startup_flag_file):
                 print("Executable has already been added to startup.")
                 return
@@ -163,20 +171,20 @@ class MasterApp:
                 flag_file.write("Added to startup")
             print("Successfully added to startup!")
         except Exception as e:
-            print(f"Error: {e}")      
+            print(f"Error: {e}")
+            logging.error(e)
 
     def cleanup_and_exit(self):
         # Add any cleanup tasks here before exiting the program
         self.AF.cleanup()  # Call the cleanup method of the Alert_Function object
         self.root.destroy()  # Destroy the main Tkinter window
-    
+
 
 def main():
     root = tk.CTk()
     app = MasterApp(root)
-    
-    root.mainloop()
 
+    root.mainloop()
 
 
 if __name__ == "__main__":

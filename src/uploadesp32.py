@@ -1,15 +1,24 @@
 import subprocess
 import serial
 import sys
-sys.stdout.reconfigure(encoding="utf-8")
-sys.stdin.reconfigure(encoding="utf-8")
+from get_port import get_serial_ports
+import logging
 
 
 class ArduinoSketchUploader:
-    def __init__(self, sketch_path ="arduino\\sketch_mar21a", port="COM3", upload_speed=115200):
-        self.sketch_path = sketch_path
-        self.port = port
-        self.upload_speed = upload_speed
+    def __init__(self, sketch_path="arduino\\sketch_mar21a", port="COM3", upload_speed=115200):
+        try:
+            self.sketch_path = sketch_path
+            self.port = get_serial_ports() if "COM" in get_serial_ports() else "None"
+            self.upload_speed = upload_speed
+            logging.basicConfig(filename='example.log', level=logging.INFO,
+                                format='%(asctime)s - %(levelname)s - %(message)s')
+            sys.stdout.reconfigure(encoding="utf-8")
+            sys.stdin.reconfigure(encoding="utf-8")
+
+        except Exception as e:
+            print(e)
+            logging.error(e)
 
     def compile_sketch(self):
         command = ['arduino-cli', 'compile', '--fqbn',
@@ -27,18 +36,22 @@ class ArduinoSketchUploader:
             return False
 
     def upload_sketch(self):
-        command = ['arduino-cli', 'upload', '-p', self.port, '--fqbn',
-                   'esp32:esp32:esp32', self.sketch_path]
-        process = subprocess.Popen(
-            command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        stdout, stderr = process.communicate()
-        if process.returncode == 0:
-            print("Sketch uploaded successfully!")
-            return True
-        else:
-            print("Error uploading sketch:")
-            print(stderr.decode())
-            return False
+        try:
+            print(self.port)
+            command = ['arduino-cli', 'upload', '-p', self.port, '--fqbn',
+                       'esp32:esp32:esp32', self.sketch_path]
+            process = subprocess.Popen(
+                command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            stdout, stderr = process.communicate()
+            if process.returncode == 0:
+                print("Sketch uploaded successfully!")
+                return True
+            else:
+                print("Error uploading sketch:")
+                print(stderr.decode())
+                return False
+        except Exception as e:
+            print(e)
 
     def communicate_serial(self):
         ser = serial.Serial(self.port, self.upload_speed)
@@ -55,19 +68,19 @@ class ArduinoSketchUploader:
             ser.close()  # Close the serial port when Ctrl+C is pressed
 
 
-def main():
-    # Replace 'path_to_your_sketch' with the path to your Arduino sketch
-    # sketch_path = r'C:\Users\diamo\OneDrive\เดสก์ท็อป\Toilet_Emergency\sender'
-    sketch_path = r'C:\Users\diamo\OneDrive\เดสก์ท็อป\Toilet_Emergency\sketch_test1'
-    # Replace 'your_port_name' with the port where your ESP32 Dev Module is connected
-    port = 'COM3'  # Example port, replace it with your actual port
+# def main():
+#     # Replace 'path_to_your_sketch' with the path to your Arduino sketch
+#     # sketch_path = r'C:\Users\diamo\OneDrive\เดสก์ท็อป\Toilet_Emergency\sender'
+#     sketch_path = r'C:\Users\diamo\OneDrive\เดสก์ท็อป\Toilet_Emergency\sketch_test1'
+#     # Replace 'your_port_name' with the port where your ESP32 Dev Module is connected
+#     port = 'COM3'  # Example port, replace it with your actual port
 
-    uploader = ArduinoSketchUploader()
-    if uploader.compile_sketch():
-        if uploader.upload_sketch():
-            # uploader.communicate_serial()
-            print("ok")
+#     uploader = ArduinoSketchUploader()
+#     if uploader.compile_sketch():
+#         if uploader.upload_sketch():
+#             # uploader.communicate_serial()
+#             print("ok")
 
 
-if __name__ == "__main__":
-    main()
+# if __name__ == "__main__":
+#     main()

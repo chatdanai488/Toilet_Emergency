@@ -7,8 +7,12 @@ import tkinter as tk
 import socket
 import atexit
 import time
+import sys
+sys.stdout.reconfigure(encoding="utf-8")
+sys.stdin.reconfigure(encoding="utf-8")
+
 class Alert_Function():
-    def __init__(self,master_app=None):
+    def __init__(self, master_app=None):
         # Initialize LineBotApi with your channel access token
         Line_API = 'TbRiL19SkLU7FtdJevjawji2GrTcC2R2mn2lBS/X5itewl7AN3fGr7RM6AC50g3VUmoFU7xNIq1q5ZegJeATWw2REvGJ1lQrLwFgWZJAEWQSJq24+Pkcomd13bTMS9HcLGArUexhYj/1Hvpox5uzpgdB04t89/1O/w1cDnyilFU='
         self.line_bot_api = LineBotApi(Line_API)
@@ -17,13 +21,15 @@ class Alert_Function():
         threading.Thread(target=self.prepare_arduino).start()
         atexit.register(self.cleanup)
         self.sock = None
+        
 
     def Send_Line_Message(self, Message):
         try:
-            self.line_bot_api.push_message(self.User_Id, TextSendMessage(text=Message))
+            self.line_bot_api.push_message(
+                self.User_Id, TextSendMessage(text=Message))
             print("Message sent successfully.")
         except LineBotApiError as e:
-            print(f"Failed to send message: {e.status_code}, {e.error.message}")
+            print(f"Failed to send message:{e.status_code}, {e.error.message}")
 
     def Alert_Sound(Self):
         # Initialize Pygame
@@ -73,14 +79,15 @@ class Alert_Function():
                     data = conn.recv(1024)
                     if not data:
                         break
-                    print("Received message:", data.decode())
-                    if data.decode():
-                        self.Master.Emergency_Alert_Called(data.decode().split())
+                    print("Received message:", data)
+                    if data:
+                        self.Master.Emergency_Alert_Called(
+                            data.split())
                     conn.close()
                 except OSError as e:
                     print(f"Socket operation failed: {e}")
                     break  # Break out of the loop if an error occurs
-                
+
         except OSError as e:
             print(f"Socket setup failed: {e}")
         finally:
